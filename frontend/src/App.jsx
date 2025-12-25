@@ -1,4 +1,5 @@
 import CTA from './Homepage/CTA';
+import Footer from './Homepage/footer';
 import Hero from './Homepage/Hero';
 import HowItWorks from './Homepage/HowItWorks';
 import KeyFeatures from './Homepage/KeyFeatures';
@@ -15,6 +16,7 @@ function App() {
       <Specialties />
       <KeyFeatures />
       <CTA />
+      <Footer />
     </>
   )
 }
