@@ -24,7 +24,7 @@ export default function Footer() {
               HealHive
             </div>
             <p className="text-sm text-slate-400">
-              A secure telehealth platform enabling instant medical
+              A secure telehealth platform enabling a instant medical
               consultations from anywhere with privacy-first technology.
             </p>
 
