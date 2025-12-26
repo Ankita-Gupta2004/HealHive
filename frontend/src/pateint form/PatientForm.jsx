@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { auth } from "../firebase";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Context/AuthContext.jsx";
 import {
   User,
   Calendar,
@@ -17,8 +18,6 @@ import {
   File,
   X,
   FileCheck,
-  Clock,
-  Star,
 } from "lucide-react";
 
 const commonDiseases = [
@@ -145,10 +144,9 @@ const PatientForm = () => {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
-  const [matchedDoctors, setMatchedDoctors] = useState([]);
-  const [showResults, setShowResults] = useState(false);
-  const [targetSpecialty, setTargetSpecialty] = useState("General Medicine");
-  const [usedFallback, setUsedFallback] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const findSpecialtyForDisease = (disease) => {
     if (!disease) return "General Medicine";
@@ -231,47 +229,69 @@ const PatientForm = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  try {
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
+    e.preventDefault();
+    if (validateStep(step)) {
+      setSaving(true);
+      try {
+        // Get Firebase token
+        const token = await user.getIdToken();
 
-    // 1. Clean the reports: Remove the 'file' (binary) object 
-    // and ensure everything else is a simple value.
-    const cleanedReports = formData.medicalDocuments.map((report) => ({
-      id: Number(report.id),
-      name: String(report.name),
-      size: String(report.size),
-      type: String(report.type)
-    }));
+        // Save patient data to backend
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/patient/submit`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(formData),
+          }
+        );
 
-    // 2. Construct the final payload object
-    const finalPayload = {
-      ...formData,
-      medicalDocuments: cleanedReports, // This MUST be the array variable, not a string
-    };
+        if (!res.ok) {
+          const errorBody = await res.text();
+          throw new Error(
+            `Failed to save patient data: ${res.status} ${res.statusText}. ${errorBody.slice(0, 100)}`
+          );
+        }
 
-    const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/patient/submit`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(finalPayload), // We stringify the WHOLE thing once here
+        const data = await res.json();
+        console.log("✅ Patient data saved:", data);
+
+        // Now filter doctors and navigate
+        const specialtyFocus = formData.specialty || findSpecialtyForDisease(formData.selectedDisease);
+        const matches = doctors.filter((doc) => {
+          const specialtyMatch = doc.specialty.toLowerCase() === specialtyFocus.toLowerCase();
+          const diseaseMatch = formData.selectedDisease
+            ? (doc.diseases || []).some(
+                (d) => d.toLowerCase() === formData.selectedDisease.toLowerCase()
+              )
+            : false;
+          return specialtyMatch || diseaseMatch;
+        });
+
+        const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
+        const usingFallback = matches.length === 0;
+        const doctorsToShow = usingFallback ? fallbackDocs : matches;
+
+        navigate("/available-doctors", {
+          state: {
+            doctors: doctorsToShow,
+            usedFallback: usingFallback,
+            targetSpecialty: specialtyFocus,
+            selectedDisease: formData.selectedDisease || "General Consultation",
+          },
+        });
+      } catch (err) {
+        console.error("❌ Error:", err);
+        alert(`Error saving patient data: ${err.message}`);
+      } finally {
+        setSaving(false);
       }
-    );
+    }
+  };
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Server Error");
-
-    alert("Data saved!");
-  } catch (err) {
-    console.error("Submission error:", err);
-  }
-};
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     addFiles(files);
@@ -928,81 +948,16 @@ const PatientForm = () => {
               ) : (
                 <button
                   type="submit"
-                  className="ml-auto px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2"
+                  disabled={saving}
+                  className="ml-auto px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="h-5 w-5" />
-                  See Doctors if Available
+                  {saving ? "Saving Patient Data..." : "See Doctors if Available"}
                 </button>
               )}
             </div>
           </form>
         </div>
-
-        {/* Doctor Results */}
-        {showResults && (
-          <div className="mt-10 bg-white rounded-3xl shadow-xl border border-emerald-100 p-8 md:p-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-              <div>
-                <p className="text-sm text-emerald-700 font-semibold">Suggested Specialty: {targetSpecialty}</p>
-                <h3 className="text-2xl font-extrabold text-slate-900">Available Doctors</h3>
-                <p className="text-sm text-slate-600">
-                  Filtered by your condition: {formData.selectedDisease || "General Consultation"}
-                </p>
-              </div>
-              {usedFallback && (
-                <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-full">
-                  No exact match found — showing trusted General Medicine doctors.
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {matchedDoctors.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="p-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-emerald-700 font-semibold">
-                        {doc.specialty}
-                      </p>
-                      <h4 className="text-lg font-bold text-slate-900">{doc.name}</h4>
-                      <p className="text-sm text-slate-600">{doc.experience} experience</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Consultation</p>
-                      <p className="text-lg font-bold text-emerald-700">{doc.fee}</p>
-                      <p className="text-xs text-emerald-600 flex items-center justify-end gap-1">
-                        <Clock className="h-4 w-4" /> {doc.availability}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(doc.diseases || []).slice(0, 4).map((diseaseTag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 rounded-full bg-white/80 border border-emerald-100 text-xs text-emerald-700"
-                      >
-                        {diseaseTag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="h-4 w-4 text-amber-500" /> Trusted Doctor
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-emerald-700">
-                      <Stethoscope className="h-4 w-4" /> {doc.languages}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Trust Indicators */}
         <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-slate-600">

@@ -11,6 +11,7 @@ import ResetPassword from "./Auth/ResetPassword.jsx";
 import { AuthProvider } from "./Context/AuthContext";
 import ResetSuccess from "./ResetSuccess.jsx";
 import PatientForm from "./pateint form/PatientForm.jsx";
+import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -24,6 +25,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/resetsuccess" element={<ResetSuccess />} />
           <Route path="/patient-form" element={<PatientForm />} />
+          <Route path="/available-doctors" element={<AvailableDoctors />} />
 
 
 
