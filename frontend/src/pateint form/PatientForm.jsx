@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Context/AuthContext.jsx";
 import {
   User,
   Calendar,
@@ -142,7 +144,9 @@ const PatientForm = () => {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const findSpecialtyForDisease = (disease) => {
     if (!disease) return "General Medicine";
@@ -224,27 +228,67 @@ const PatientForm = () => {
     setStep((prev) => prev - 1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateStep(step)) {
-      const specialtyFocus = formData.specialty || findSpecialtyForDisease(formData.selectedDisease);
-      const matches = doctors.filter((doc) => {
-        const specialtyMatch = doc.specialty.toLowerCase() === specialtyFocus.toLowerCase();
-        const diseaseMatch = formData.selectedDisease
-          ? (doc.diseases || []).some(
-              (d) => d.toLowerCase() === formData.selectedDisease.toLowerCase()
-            )
-          : false;
-        return specialtyMatch || diseaseMatch;
-      });
+      setSaving(true);
+      try {
+        // Get Firebase token
+        const token = await user.getIdToken();
 
-      const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
-      const usingFallback = matches.length === 0;
+        // Save patient data to backend
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/patient/submit`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(formData),
+          }
+        );
 
-      setMatchedDoctors(usingFallback ? fallbackDocs : matches);
-      setUsedFallback(usingFallback);
-      setTargetSpecialty(specialtyFocus);
-      setShowResults(true);
+        if (!res.ok) {
+          const errorBody = await res.text();
+          throw new Error(
+            `Failed to save patient data: ${res.status} ${res.statusText}. ${errorBody.slice(0, 100)}`
+          );
+        }
+
+        const data = await res.json();
+        console.log("✅ Patient data saved:", data);
+
+        // Now filter doctors and navigate
+        const specialtyFocus = formData.specialty || findSpecialtyForDisease(formData.selectedDisease);
+        const matches = doctors.filter((doc) => {
+          const specialtyMatch = doc.specialty.toLowerCase() === specialtyFocus.toLowerCase();
+          const diseaseMatch = formData.selectedDisease
+            ? (doc.diseases || []).some(
+                (d) => d.toLowerCase() === formData.selectedDisease.toLowerCase()
+              )
+            : false;
+          return specialtyMatch || diseaseMatch;
+        });
+
+        const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
+        const usingFallback = matches.length === 0;
+        const doctorsToShow = usingFallback ? fallbackDocs : matches;
+
+        navigate("/available-doctors", {
+          state: {
+            doctors: doctorsToShow,
+            usedFallback: usingFallback,
+            targetSpecialty: specialtyFocus,
+            selectedDisease: formData.selectedDisease || "General Consultation",
+          },
+        });
+      } catch (err) {
+        console.error("❌ Error:", err);
+        alert(`Error saving patient data: ${err.message}`);
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -904,10 +948,11 @@ const PatientForm = () => {
               ) : (
                 <button
                   type="submit"
-                  className="ml-auto px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2"
+                  disabled={saving}
+                  className="ml-auto px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="h-5 w-5" />
-                  See Doctors if Available
+                  {saving ? "Saving Patient Data..." : "See Doctors if Available"}
                 </button>
               )}
             </div>

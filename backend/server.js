@@ -35,12 +35,13 @@ app.use(express.json()); // parse JSON body
 
 // Connect to MongoDB
 // Remove the options object entirely
-try {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("✅ MongoDB connected to HealHive database");
-} catch (err) {
-  console.error("❌ MongoDB connection error:", err);
-}
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected to HealHive database");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+  });
 
 // Routes
 app.get("/", (req, res) => {
