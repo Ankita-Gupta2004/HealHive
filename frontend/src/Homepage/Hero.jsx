@@ -10,13 +10,11 @@ import {
 const Hero = () => {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-
       {/* Background gradients */}
       <div className="absolute -top-24 -left-24 h-96 w-96 bg-emerald-200/40 rounded-full blur-3xl animate-pulse" />
       <div className="absolute top-40 -right-24 h-96 w-96 bg-teal-200/40 rounded-full blur-3xl animate-pulse delay-200" />
 
       <div className="relative max-w-7xl mx-auto px-6 py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-
         {/* LEFT */}
         <div className="space-y-8 animate-fadeUp">
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 text-emerald-700 px-4 py-1 text-sm font-medium">
@@ -47,19 +45,22 @@ const Hero = () => {
               Consult a Doctor
             </Link>
 
-            <Link
-              to="/how-it-works"
+            <button
+              onClick={() => {
+                document
+                  .getElementById("how-it-works")
+                  .scrollIntoView({ behavior: "smooth" });
+              }}
               className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-6 py-3 text-emerald-700 font-semibold hover:bg-emerald-50 transition"
             >
-              <FileText className="h-5 w-5" />
               How It Works
-            </Link>
+            </button>
           </div>
 
           {/* Trust / features */}
           <div className="flex flex-wrap gap-6 pt-6 text-sm text-slate-600">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-emerald-600"  />
+              <ShieldCheck className="h-5 w-5 text-emerald-600" />
               Secure & Private
             </div>
             <div className="flex items-center gap-2">
@@ -76,7 +77,6 @@ const Hero = () => {
         {/* RIGHT */}
         <div className="relative animate-float">
           <div className="rounded-3xl bg-white shadow-2xl border border-emerald-100 p-6">
-
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-semibold text-emerald-700 flex items-center gap-2">
                 <Video className="h-4 w-4" />
@@ -107,10 +107,8 @@ const Hero = () => {
                 “I have been experiencing headaches for the past few days…”
               </p>
             </div>
-
           </div>
         </div>
-
       </div>
     </section>
   );
