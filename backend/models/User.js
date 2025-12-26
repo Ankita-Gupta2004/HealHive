@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   lastSeen: { type: Date, default: Date.now },
   metadata: Object, // optional extra info
+  profileCompleted: { type: Boolean, default: false },
 });
+
 
 export default mongoose.model("User", userSchema);

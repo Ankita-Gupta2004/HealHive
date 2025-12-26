@@ -50,6 +50,7 @@ export default function Login() {
         email,
         password
       );
+      
       const user = userCredential.user;
 
       // ✅ Check email verification
@@ -64,20 +65,41 @@ export default function Login() {
 
       // ✅ Sync with backend
       // Inside Login.jsx handleSubmit
-await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/sync`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-  },
-  body: JSON.stringify({ 
-    role: "patient", // Default role for safety if user is missing from DB
-    extra: { name: user.displayName } 
-  }),
-});
+      // await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/sync`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify({
+      //     role: "patient", // Default role for safety if user is missing from DB
+      //     extra: { name: user.displayName },
+      //   }),
+      // });
 
-      alert("Login successful!");
-      navigate("/");
+      // ✅ Ask backend for user role
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.role === "patient") {
+        if (data.profileCompleted === false) {
+          navigate("/patient-form");
+        } else {
+          navigate("/"); // or "/"
+        }
+      } else if (data.role === "doctor") {
+        navigate("/doctor-dashboard"); // or "/"
+      }
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -134,11 +156,7 @@ await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/sync`, {
               </a>
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2"
-            >
+            <Button type="submit" disabled={loading} className="w-full mt-2">
               {loading ? "Logging in..." : "Log In"}
             </Button>
           </form>

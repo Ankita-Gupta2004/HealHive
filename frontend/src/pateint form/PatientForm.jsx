@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { auth } from "../firebase";
 import {
   User,
   Calendar,
@@ -138,7 +139,7 @@ const PatientForm = () => {
     preferredDate: "",
     preferredTime: "",
     additionalNotes: "",
-    testReports: [],
+    medicalDocuments: [],
   });
 
   const [step, setStep] = useState(1);
@@ -229,30 +230,48 @@ const PatientForm = () => {
     setStep((prev) => prev - 1);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateStep(step)) {
-      const specialtyFocus = formData.specialty || findSpecialtyForDisease(formData.selectedDisease);
-      const matches = doctors.filter((doc) => {
-        const specialtyMatch = doc.specialty.toLowerCase() === specialtyFocus.toLowerCase();
-        const diseaseMatch = formData.selectedDisease
-          ? (doc.diseases || []).some(
-              (d) => d.toLowerCase() === formData.selectedDisease.toLowerCase()
-            )
-          : false;
-        return specialtyMatch || diseaseMatch;
-      });
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
 
-      const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
-      const usingFallback = matches.length === 0;
+    // 1. Clean the reports: Remove the 'file' (binary) object 
+    // and ensure everything else is a simple value.
+    const cleanedReports = formData.medicalDocuments.map((report) => ({
+      id: Number(report.id),
+      name: String(report.name),
+      size: String(report.size),
+      type: String(report.type)
+    }));
 
-      setMatchedDoctors(usingFallback ? fallbackDocs : matches);
-      setUsedFallback(usingFallback);
-      setTargetSpecialty(specialtyFocus);
-      setShowResults(true);
-    }
-  };
+    // 2. Construct the final payload object
+    const finalPayload = {
+      ...formData,
+      medicalDocuments: cleanedReports, // This MUST be the array variable, not a string
+    };
 
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/patient/submit`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(finalPayload), // We stringify the WHOLE thing once here
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Server Error");
+
+    alert("Data saved!");
+  } catch (err) {
+    console.error("Submission error:", err);
+  }
+};
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     addFiles(files);
@@ -295,7 +314,7 @@ const PatientForm = () => {
       }));
       setFormData((prev) => ({
         ...prev,
-        testReports: [...prev.testReports, ...newReports],
+        medicalDocuments: [...prev.medicalDocuments, ...newReports],
       }));
     }
   };
@@ -303,7 +322,7 @@ const PatientForm = () => {
   const removeFile = (fileId) => {
     setFormData((prev) => ({
       ...prev,
-      testReports: prev.testReports.filter((f) => f.id !== fileId),
+      medicalDocuments: prev.medicalDocuments.filter((f) => f.id !== fileId),
     }));
   };
 
@@ -815,14 +834,14 @@ const PatientForm = () => {
                   </div>
 
                   {/* Uploaded Files List */}
-                  {formData.testReports.length > 0 && (
+                  {formData.medicalDocuments.length > 0 && (
                     <div className="mt-6 space-y-3">
                       <h4 className="font-semibold text-slate-700 flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        Uploaded Files ({formData.testReports.length})
+                        Uploaded Files ({formData.medicalDocuments.length})
                       </h4>
                       <div className="space-y-2">
-                        {formData.testReports.map((report) => (
+                        {formData.medicalDocuments.map((report) => (
                           <div
                             key={report.id}
                             className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition"
