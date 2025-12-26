@@ -7,7 +7,6 @@ import Navbar from './Homepage/Navbar';
 import Specialties from './Homepage/Specialties';
 
 function App() {
-
   return (
     <>
       <Navbar />
@@ -18,7 +17,7 @@ function App() {
       <CTA />
       <Footer />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
