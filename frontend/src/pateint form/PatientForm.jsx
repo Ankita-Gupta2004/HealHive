@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Calendar,
@@ -16,8 +17,6 @@ import {
   File,
   X,
   FileCheck,
-  Clock,
-  Star,
 } from "lucide-react";
 
 const commonDiseases = [
@@ -144,10 +143,7 @@ const PatientForm = () => {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [dragActive, setDragActive] = useState(false);
-  const [matchedDoctors, setMatchedDoctors] = useState([]);
-  const [showResults, setShowResults] = useState(false);
-  const [targetSpecialty, setTargetSpecialty] = useState("General Medicine");
-  const [usedFallback, setUsedFallback] = useState(false);
+  const navigate = useNavigate();
 
   const findSpecialtyForDisease = (disease) => {
     if (!disease) return "General Medicine";
@@ -245,11 +241,16 @@ const PatientForm = () => {
 
       const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
       const usingFallback = matches.length === 0;
+      const doctorsToShow = usingFallback ? fallbackDocs : matches;
 
-      setMatchedDoctors(usingFallback ? fallbackDocs : matches);
-      setUsedFallback(usingFallback);
-      setTargetSpecialty(specialtyFocus);
-      setShowResults(true);
+      navigate("/available-doctors", {
+        state: {
+          doctors: doctorsToShow,
+          usedFallback: usingFallback,
+          targetSpecialty: specialtyFocus,
+          selectedDisease: formData.selectedDisease || "General Consultation",
+        },
+      });
     }
   };
 
@@ -918,72 +919,6 @@ const PatientForm = () => {
             </div>
           </form>
         </div>
-
-        {/* Doctor Results */}
-        {showResults && (
-          <div className="mt-10 bg-white rounded-3xl shadow-xl border border-emerald-100 p-8 md:p-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-              <div>
-                <p className="text-sm text-emerald-700 font-semibold">Suggested Specialty: {targetSpecialty}</p>
-                <h3 className="text-2xl font-extrabold text-slate-900">Available Doctors</h3>
-                <p className="text-sm text-slate-600">
-                  Filtered by your condition: {formData.selectedDisease || "General Consultation"}
-                </p>
-              </div>
-              {usedFallback && (
-                <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-full">
-                  No exact match found — showing trusted General Medicine doctors.
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {matchedDoctors.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="p-5 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-emerald-700 font-semibold">
-                        {doc.specialty}
-                      </p>
-                      <h4 className="text-lg font-bold text-slate-900">{doc.name}</h4>
-                      <p className="text-sm text-slate-600">{doc.experience} experience</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">Consultation</p>
-                      <p className="text-lg font-bold text-emerald-700">{doc.fee}</p>
-                      <p className="text-xs text-emerald-600 flex items-center justify-end gap-1">
-                        <Clock className="h-4 w-4" /> {doc.availability}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {(doc.diseases || []).slice(0, 4).map((diseaseTag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 rounded-full bg-white/80 border border-emerald-100 text-xs text-emerald-700"
-                      >
-                        {diseaseTag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="h-4 w-4 text-amber-500" /> Trusted Doctor
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-emerald-700">
-                      <Stethoscope className="h-4 w-4" /> {doc.languages}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Trust Indicators */}
         <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-slate-600">
