@@ -8,16 +8,11 @@ import {
   Mail,
   MapPin,
   Stethoscope,
-  FileText,
   AlertCircle,
   Heart,
   CreditCard,
   CheckCircle,
   UserCircle,
-  Upload,
-  File,
-  X,
-  FileCheck,
 } from "lucide-react";
 
 const commonDiseases = [
@@ -138,12 +133,10 @@ const PatientForm = () => {
     preferredDate: "",
     preferredTime: "",
     additionalNotes: "",
-    medicalDocuments: [],
   });
 
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
-  const [dragActive, setDragActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -290,60 +283,6 @@ const PatientForm = () => {
         setSaving(false);
       }
     }
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    addFiles(files);
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const files = Array.from(e.dataTransfer.files);
-    addFiles(files);
-  };
-
-  const addFiles = (files) => {
-    const validFiles = files.filter(
-      (file) =>
-        file.size <= 5 * 1024 * 1024 && // 5MB limit
-        ["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(
-          file.type
-        )
-    );
-
-    if (validFiles.length > 0) {
-      const newReports = validFiles.map((file) => ({
-        id: Math.random(),
-        name: file.name,
-        size: (file.size / 1024).toFixed(2),
-        type: file.type,
-        file: file,
-      }));
-      setFormData((prev) => ({
-        ...prev,
-        medicalDocuments: [...prev.medicalDocuments, ...newReports],
-      }));
-    }
-  };
-
-  const removeFile = (fileId) => {
-    setFormData((prev) => ({
-      ...prev,
-      medicalDocuments: prev.medicalDocuments.filter((f) => f.id !== fileId),
-    }));
   };
 
   return (
@@ -808,110 +747,7 @@ const PatientForm = () => {
                   </div>
                 </div>
 
-                {/* Upload Test Reports */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FileCheck className="h-5 w-5 text-emerald-600" />
-                      Upload Test Reports (Optional)
-                    </div>
-                  </label>
-
-                  {/* Drag & Drop Area */}
-                  <div
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                    className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-                      dragActive
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 hover:border-emerald-400"
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileChange}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="p-3 rounded-full bg-emerald-100">
-                        <Upload className="h-6 w-6 text-emerald-600" />
-                      </div>
-                      <h3 className="font-semibold text-slate-900">
-                        Drop your test reports here
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        or click to browse (PDF, JPG, PNG - Max 5MB each)
-                      </p>
-                      <p className="text-xs text-slate-400 mt-2">
-                        Upload blood reports, X-rays, CT scans, etc.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Uploaded Files List */}
-                  {formData.medicalDocuments.length > 0 && (
-                    <div className="mt-6 space-y-3">
-                      <h4 className="font-semibold text-slate-700 flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        Uploaded Files ({formData.medicalDocuments.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {formData.medicalDocuments.map((report) => (
-                          <div
-                            key={report.id}
-                            className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition"
-                          >
-                            <div className="flex items-center gap-3 flex-1">
-                              {report.type === "application/pdf" ? (
-                                <div className="p-2 rounded-lg bg-red-100">
-                                  <FileText className="h-5 w-5 text-red-600" />
-                                </div>
-                              ) : (
-                                <div className="p-2 rounded-lg bg-blue-100">
-                                  <File className="h-5 w-5 text-blue-600" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <p className="font-medium text-slate-900 text-sm truncate">
-                                  {report.name}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {report.size} KB
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeFile(report.id)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition text-red-600"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* File Upload Tips */}
-                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-                    <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-semibold mb-1">Supported Documents:</p>
-                      <ul className="text-xs space-y-1">
-                        <li>• Blood Test Reports & Lab Results</li>
-                        <li>• Medical Imaging (X-rays, CT Scans, MRI)</li>
-                        <li>• Previous Prescriptions & Medical Records</li>
-                        <li>• ECG, EEG & Other Diagnostic Reports</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                {/* Upload Test Reports removed */}
               </div>
             )}
 
