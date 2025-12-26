@@ -43,13 +43,14 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section className="relative bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-24 overflow-hidden">
-
+    <section
+      id="how-it-works"
+      className="relative bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-24 overflow-hidden"
+    >
       {/* Background glow */}
       <div className="absolute -top-24 left-1/3 h-96 w-96 bg-emerald-200/40 rounded-full blur-3xl animate-pulse" />
 
       <div className="relative max-w-7xl mx-auto px-6">
-
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16 animate-fadeUp">
           <span className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-1 rounded-full text-sm font-semibold">
@@ -87,8 +88,12 @@ const HowItWorks = () => {
                   0{index + 1}
                 </span>
 
-                <h3 className="text-lg font-bold text-slate-900">{step.title}</h3>
-                <p className="mt-3 text-slate-600 leading-relaxed">{step.desc}</p>
+                <h3 className="text-lg font-bold text-slate-900">
+                  {step.title}
+                </h3>
+                <p className="mt-3 text-slate-600 leading-relaxed">
+                  {step.desc}
+                </p>
               </div>
             );
           })}
