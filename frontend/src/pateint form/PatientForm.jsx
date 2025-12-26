@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   User,
   Calendar,
@@ -137,7 +136,7 @@ const PatientForm = () => {
     preferredDate: "",
     preferredTime: "",
     additionalNotes: "",
-    testReports: [],
+    medicalDocuments: [],
   });
 
   const [step, setStep] = useState(1);
@@ -241,16 +240,11 @@ const PatientForm = () => {
 
       const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
       const usingFallback = matches.length === 0;
-      const doctorsToShow = usingFallback ? fallbackDocs : matches;
 
-      navigate("/available-doctors", {
-        state: {
-          doctors: doctorsToShow,
-          usedFallback: usingFallback,
-          targetSpecialty: specialtyFocus,
-          selectedDisease: formData.selectedDisease || "General Consultation",
-        },
-      });
+      setMatchedDoctors(usingFallback ? fallbackDocs : matches);
+      setUsedFallback(usingFallback);
+      setTargetSpecialty(specialtyFocus);
+      setShowResults(true);
     }
   };
 
@@ -296,7 +290,7 @@ const PatientForm = () => {
       }));
       setFormData((prev) => ({
         ...prev,
-        testReports: [...prev.testReports, ...newReports],
+        medicalDocuments: [...prev.medicalDocuments, ...newReports],
       }));
     }
   };
@@ -304,7 +298,7 @@ const PatientForm = () => {
   const removeFile = (fileId) => {
     setFormData((prev) => ({
       ...prev,
-      testReports: prev.testReports.filter((f) => f.id !== fileId),
+      medicalDocuments: prev.medicalDocuments.filter((f) => f.id !== fileId),
     }));
   };
 
@@ -816,14 +810,14 @@ const PatientForm = () => {
                   </div>
 
                   {/* Uploaded Files List */}
-                  {formData.testReports.length > 0 && (
+                  {formData.medicalDocuments.length > 0 && (
                     <div className="mt-6 space-y-3">
                       <h4 className="font-semibold text-slate-700 flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        Uploaded Files ({formData.testReports.length})
+                        Uploaded Files ({formData.medicalDocuments.length})
                       </h4>
                       <div className="space-y-2">
-                        {formData.testReports.map((report) => (
+                        {formData.medicalDocuments.map((report) => (
                           <div
                             key={report.id}
                             className="flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition"

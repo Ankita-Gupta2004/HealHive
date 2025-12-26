@@ -2,8 +2,10 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import admin from "firebase-admin";
+// import admin from "firebase-admin";
 import userRoutes from "./routes/users.js";
+import patientRoutes from "./routes/Patient.js";
+
 
 dotenv.config();
 
@@ -25,11 +27,11 @@ app.use((req, res, next) => {
 app.use(express.json()); // parse JSON body
 
 // Initialize Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(
-    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
-  ),
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(
+//     JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+//   ),
+// });
 
 // Connect to MongoDB
 // Remove the options object entirely
@@ -46,6 +48,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+
+app.use("/api/patient", patientRoutes);
+
 
 // Start server
 const PORT = process.env.PORT || 5000;
