@@ -27,3 +27,5 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HEALHIVE_DF7BF }}
           projectId: healhive-df7bf
           entryPoint: "./frontend"  # Tells Firebase where firebase.json is
+          channelId: ${{ github.event.pull_request.number }}
+          expires: 7d
