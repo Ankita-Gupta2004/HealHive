@@ -169,8 +169,8 @@ const DoctorForm = () => {
     const data = await res.json();
     console.log("✅ Doctor saved in DB:", data);
 
-    // ✅ SUCCESS → dashboard
-    navigate("/doctor-dashboard");
+    // ✅ SUCCESS → redirect to homepage
+    navigate("/");
 
   } catch (err) {
     console.error("❌ Submit error:", err.message);

@@ -38,4 +38,29 @@ router.post("/submit", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * GET: Fetch Doctor Profile
+ */
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const uid = req.firebaseUser.uid;
+
+    const doctor = await Doctor.findOne({ uid });
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor profile not found",
+      });
+    }
+
+    res.json({
+      message: "Doctor profile retrieved successfully",
+      doctor,
+    });
+  } catch (error) {
+    console.error("Doctor profile fetch error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;

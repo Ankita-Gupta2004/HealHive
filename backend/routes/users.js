@@ -64,11 +64,11 @@ router.post("/login", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // For doctors, also check if they completed their registration form
+    // If doctor, check doctor profile completion
     if (user.role === "doctor") {
       const Doctor = (await import("../models/Doctor.js")).default;
       const doctor = await Doctor.findOne({ uid: decodedToken.uid });
-      
+
       return res.json({
         role: user.role,
         profileCompleted: doctor ? doctor.profileCompleted : false,

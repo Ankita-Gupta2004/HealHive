@@ -95,13 +95,13 @@ export default function Login() {
         if (data.profileCompleted === false) {
           navigate("/patient-form");
         } else {
-          navigate("/"); // or "/"
+          navigate("/");
         }
       } else if (data.role === "doctor") {
         if (data.profileCompleted === false) {
-          navigate("/doc"); // Redirect to doctor registration form
+          navigate("/doc"); // take doctor to registration if incomplete
         } else {
-          navigate("/doctor-dashboard"); // Redirect to doctor dashboard if already completed
+          navigate("/"); // doctor already registered → go home
         }
       }
     } catch (err) {
