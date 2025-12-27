@@ -18,3 +18,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HEALHIVE_DF7BF }}
           channelId: live
           projectId: healhive-df7bf
+          entryPoint: "./frontend"
