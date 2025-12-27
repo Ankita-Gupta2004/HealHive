@@ -14,9 +14,20 @@ const Navbar = () => {
   const [showAccount, setShowAccount] = useState(false);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null); // Track user role (patient/doctor)
+  const [searchInput, setSearchInput] = useState("");
 
   const menuRef = useRef(null);
   const navigate = useNavigate();
+
+  // Handle search button click
+  const handleSearchDoctors = () => {
+    if (searchInput.trim()) {
+      navigate("/doctor-search", { state: { searchQuery: searchInput } });
+      setSearchInput("");
+    } else {
+      navigate("/doctor-search");
+    }
+  };
 
   // 🔥 Auth listener & fetch user role
   useEffect(() => {
@@ -113,7 +124,34 @@ const Navbar = () => {
               <input
                 className="bg-transparent outline-none text-sm text-slate-700 placeholder-emerald-400 w-48"
                 placeholder="Search doctors, specialties"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchDoctors();
+                  }
+                }}
               />
+              {searchInput && (
+                <button
+                  onClick={handleSearchDoctors}
+                  className="text-emerald-600 hover:text-emerald-700 transition ml-1"
+                  title="Search"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7m0 0l-7 7m7-7H5"
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* CTA - My Dashboard */}
@@ -178,6 +216,22 @@ const Navbar = () => {
                       >
                         My Dashboard
                       </Link>
+                      {userRole === "patient" && (
+                        <>
+                          <Link
+                            to="/doctor-search"
+                            className="block px-4 py-2 text-sm hover:bg-emerald-50"
+                          >
+                            Find a Doctor
+                          </Link>
+                          <Link
+                            to="/appointment-history"
+                            className="block px-4 py-2 text-sm hover:bg-emerald-50"
+                          >
+                            My Appointments
+                          </Link>
+                        </>
+                      )}
                       <Link
                         to="/settings"
                         className="block px-4 py-2 text-sm hover:bg-emerald-50"

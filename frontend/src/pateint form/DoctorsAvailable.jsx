@@ -21,6 +21,27 @@ const DoctorsAvailable = () => {
   const [selectedSlots, setSelectedSlots] = useState({}); // { [doctorId]: time }
   const [viewedDoctorId, setViewedDoctorId] = useState(null); // Track expanded doctor
   const { user } = useAuth();
+  // Guard: require login to view available doctors
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg p-8 text-center max-w-md">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Login Required</h2>
+            <p className="text-slate-600 mb-4">Please log in to view available doctors.</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   const doctors = location.state?.doctors || [];
   const usedFallback = location.state?.usedFallback;
