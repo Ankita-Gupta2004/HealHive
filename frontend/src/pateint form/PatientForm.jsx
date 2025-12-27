@@ -59,6 +59,11 @@ const doctors = [
     availability: "Today • 3 slots",
     experience: "12 yrs",
     languages: "English, Hindi",
+    timeSlots: [
+      { time: "09:00 AM", available: true },
+      { time: "11:00 AM", available: false },
+      { time: "04:00 PM", available: true },
+    ],
   },
   {
     id: 2,
@@ -69,6 +74,11 @@ const doctors = [
     availability: "Today • 5 slots",
     experience: "9 yrs",
     languages: "English, Hindi, Telugu",
+    timeSlots: [
+      { time: "10:00 AM", available: true },
+      { time: "02:30 PM", available: true },
+      { time: "05:30 PM", available: true },
+    ],
   },
   {
     id: 3,
@@ -79,6 +89,11 @@ const doctors = [
     availability: "Tomorrow • 4 slots",
     experience: "11 yrs",
     languages: "English, Hindi",
+    timeSlots: [
+      { time: "09:30 AM", available: false },
+      { time: "12:00 PM", available: true },
+      { time: "03:30 PM", available: true },
+    ],
   },
   {
     id: 4,
@@ -89,6 +104,10 @@ const doctors = [
     availability: "Today • 2 slots",
     experience: "10 yrs",
     languages: "English, Bengali, Hindi",
+    timeSlots: [
+      { time: "11:30 AM", available: true },
+      { time: "03:00 PM", available: false },
+    ],
   },
   {
     id: 5,
@@ -99,6 +118,11 @@ const doctors = [
     availability: "Tomorrow • 6 slots",
     experience: "13 yrs",
     languages: "English, Marathi, Hindi",
+    timeSlots: [
+      { time: "10:30 AM", available: true },
+      { time: "01:00 PM", available: true },
+      { time: "04:30 PM", available: false },
+    ],
   },
   {
     id: 6,
@@ -109,6 +133,11 @@ const doctors = [
     availability: "Today • 4 slots",
     experience: "8 yrs",
     languages: "English, Gujarati, Hindi",
+    timeSlots: [
+      { time: "09:00 AM", available: true },
+      { time: "02:00 PM", available: false },
+      { time: "05:00 PM", available: true },
+    ],
   },
 ];
 
