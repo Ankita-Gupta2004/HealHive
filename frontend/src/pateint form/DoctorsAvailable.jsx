@@ -132,7 +132,7 @@ const DoctorsAvailable = () => {
                 onClick={() => navigate("/patient-form")}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl transition"
               >
-                Go to Patient Form
+                Go to Patient-Form
               </button>
               <button
                 onClick={handleBack}

@@ -252,7 +252,7 @@ const PatientForm = () => {
 
       <div className="relative max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-10 animate-fadeUp">
+        <div className="text-center mb-11 animate-fadeUp">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Stethoscope className="h-8 w-8 text-emerald-600" />
             <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 bg-clip-text text-transparent">

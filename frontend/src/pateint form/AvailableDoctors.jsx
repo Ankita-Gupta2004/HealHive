@@ -107,7 +107,7 @@ const AvailableDoctors = () => {
           <div>
             <p className="text-sm text-emerald-700 font-semibold">Suggested Specialty: {targetSpecialty}</p>
             <h1 className="text-2xl font-extrabold text-slate-900">Available Doctors</h1>
-            <p className="text-sm text-slate-600">Filtered by your condition: {selectedDisease}</p>
+            <p className="text-sm text-slate-601">Filtered by your condition: {selectedDisease}</p>
           </div>
           <div className="flex items-center gap-3">
             {usedFallback && (
