@@ -23,6 +23,7 @@ router.post("/submit", verifyToken, async (req, res) => {
     const doctor = new Doctor({
       uid,
       ...req.body,
+      profileCompleted: true, // Mark profile as completed upon registration
     });
 
     await doctor.save();
