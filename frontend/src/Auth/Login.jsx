@@ -95,10 +95,14 @@ export default function Login() {
         if (data.profileCompleted === false) {
           navigate("/patient-form");
         } else {
-          navigate("/"); // or "/"
+          navigate("/");
         }
       } else if (data.role === "doctor") {
-        navigate("/doc"); // or "/"
+        if (data.profileCompleted === false) {
+          navigate("/doc"); // take doctor to registration if incomplete
+        } else {
+          navigate("/"); // doctor already registered → go home
+        }
       }
     } catch (err) {
       console.error(err);

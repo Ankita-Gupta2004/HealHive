@@ -12,6 +12,9 @@ import {
   User,
   X,
 } from "lucide-react";
+import Navbar from "../../Homepage/Navbar";
+import Footer from "../../Homepage/footer";
+import { useAuth } from "../../Context/AuthContext";
 
 const statsTemplate = [
   { label: "Today's Appointments", key: "appointments", icon: Calendar },
@@ -51,21 +54,83 @@ const StatCard = ({ icon: Icon, label, value }) => (
 
 const DoctorDashboard = () => {
   const [doctor, setDoctor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [editData, setEditData] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const storedDoctor = localStorage.getItem("doctorFormData");
-    if (storedDoctor) {
-      setDoctor(JSON.parse(storedDoctor));
-    }
-  }, []);
+    const fetchDoctorData = async () => {
+      try {
+        if (!user) {
+          setError("Please log in to view your dashboard.");
+          setLoading(false);
+          return;
+        }
 
-  if (!doctor) {
+        const token = await user.getIdToken();
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/doctor/profile`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch doctor profile: ${res.status}`);
+        }
+
+        const data = await res.json();
+        console.log("✅ Doctor data loaded:", data);
+        setDoctor(data.doctor || data);
+      } catch (err) {
+        console.error("❌ Error fetching doctor data:", err);
+        setError(err.message || "Failed to load doctor data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDoctorData();
+  }, [user]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">
-        No doctor data found. Please complete profile first.
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+          <div className="text-slate-600 text-center">
+            <p className="text-lg font-semibold">Loading your dashboard...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (error || !doctor) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+          <div className="bg-white border border-emerald-100 rounded-2xl p-8 max-w-md text-center space-y-4">
+            <p className="text-slate-700 font-semibold">{error || "No doctor data found"}</p>
+            <p className="text-sm text-slate-600">Please complete your registration first.</p>
+            <button
+              onClick={() => window.location.href = "/doc"}
+              className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700"
+            >
+              Complete Registration
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </>
     );
   }
 
@@ -97,8 +162,10 @@ const DoctorDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-10">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-8">
+        <div className="max-w-7xl mx-auto space-y-10">
 
         {/* HEADER */}
         <div>
@@ -197,10 +264,9 @@ const DoctorDashboard = () => {
             Edit Profile
           </button>
         </div>
-      </div>
 
-      {/* EDIT PROFILE MODAL */}
-      {openEdit && (
+        {/* EDIT PROFILE MODAL */}
+        {openEdit && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md relative space-y-4">
             <button
@@ -284,8 +350,11 @@ const DoctorDashboard = () => {
             </button>
           </div>
         </div>
-      )}
-    </div>
+        )}
+        </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

@@ -13,14 +13,37 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null); // Track user role (patient/doctor)
 
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
-  // 🔥 Auth listener
+  // 🔥 Auth listener & fetch user role
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      
+      if (currentUser) {
+        try {
+          const token = await currentUser.getIdToken();
+          const res = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          const data = await res.json();
+          setUserRole(data.role); // Set 'patient' or 'doctor'
+        } catch (err) {
+          console.error("Error fetching user role:", err);
+        }
+      } else {
+        setUserRole(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -93,13 +116,26 @@ const Navbar = () => {
               />
             </div>
 
-            {/* CTA */}
-            <Link
-              to="/patient-form"
-              className="hidden md:inline-flex bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow hover:scale-[1.02]"
-            >
-              Consult Now
-            </Link>
+            {/* CTA - My Dashboard */}
+            {user ? (
+              <button
+                onClick={() => {
+                  const dashboardUrl = userRole === "doctor" ? "/doctor-dashboard" : "/patient-dashboard";
+                  navigate(dashboardUrl);
+                  setShowAccount(false);
+                }}
+                className="hidden md:inline-flex bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow hover:scale-[1.02] transition"
+              >
+                My Dashboard
+              </button>
+            ) : (
+              <Link
+                to="/patient-form"
+                className="hidden md:inline-flex bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow hover:scale-[1.02] transition"
+              >
+                Consult Now
+              </Link>
+            )}
 
             {/* ACCOUNT */}
             <div className="relative">
@@ -137,7 +173,7 @@ const Navbar = () => {
                   ) : (
                     <>
                       <Link
-                        to="/patient-dashboard"
+                        to={userRole === "doctor" ? "/doctor-dashboard" : "/patient-dashboard"}
                         className="block px-4 py-2 text-sm hover:bg-emerald-50"
                       >
                         My Dashboard
