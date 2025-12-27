@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext.jsx";
+import Navbar from "../Homepage/Navbar";
+import Footer from "../Homepage/footer";
 import {
   User,
   Calendar,
@@ -325,10 +327,12 @@ const PatientForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
-      {/* Background gradients */}
-      <div className="absolute -top-24 -left-24 h-96 w-96 bg-emerald-200/40 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute top-40 -right-24 h-96 w-96 bg-teal-200/40 rounded-full blur-3xl animate-pulse delay-200" />
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background gradients */}
+        <div className="absolute -top-24 -left-24 h-96 w-96 bg-emerald-200/40 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 -right-24 h-96 w-96 bg-teal-200/40 rounded-full blur-3xl animate-pulse delay-200" />
 
       <div className="relative max-w-4xl mx-auto">
         {/* Header */}
@@ -862,6 +866,8 @@ const PatientForm = () => {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 };
 
