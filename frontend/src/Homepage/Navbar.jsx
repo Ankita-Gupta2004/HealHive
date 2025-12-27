@@ -95,7 +95,7 @@ const Navbar = () => {
 
             {/* CTA */}
             <Link
-              to="/book"
+              to="/patient-form"
               className="hidden md:inline-flex bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow hover:scale-[1.02]"
             >
               Consult Now

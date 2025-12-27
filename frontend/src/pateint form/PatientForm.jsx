@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext.jsx";
+import { filterDoctors } from "../utils/doctorFilterService.js";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
 import {
@@ -49,98 +50,6 @@ const specialties = [
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-const doctors = [
-  {
-    id: 1,
-    name: "Dr. Arjun Mehta",
-    specialty: "Cardiology",
-    diseases: ["Hypertension", "Heart Disease"],
-    fee: "₹700",
-    availability: "Today • 3 slots",
-    experience: "12 yrs",
-    languages: "English, Hindi",
-    timeSlots: [
-      { time: "09:00 AM", available: true },
-      { time: "11:00 AM", available: false },
-      { time: "04:00 PM", available: true },
-    ],
-  },
-  {
-    id: 2,
-    name: "Dr. Kavya Rao",
-    specialty: "General Medicine",
-    diseases: ["Diabetes", "Asthma", "COPD", "Thyroid Disorder", "Kidney Disease", "Liver Disease"],
-    fee: "₹450",
-    availability: "Today • 5 slots",
-    experience: "9 yrs",
-    languages: "English, Hindi, Telugu",
-    timeSlots: [
-      { time: "10:00 AM", available: true },
-      { time: "02:30 PM", available: true },
-      { time: "05:30 PM", available: true },
-    ],
-  },
-  {
-    id: 3,
-    name: "Dr. Neeraj Sethi",
-    specialty: "Neurology",
-    diseases: ["Migraine"],
-    fee: "₹650",
-    availability: "Tomorrow • 4 slots",
-    experience: "11 yrs",
-    languages: "English, Hindi",
-    timeSlots: [
-      { time: "09:30 AM", available: false },
-      { time: "12:00 PM", available: true },
-      { time: "03:30 PM", available: true },
-    ],
-  },
-  {
-    id: 4,
-    name: "Dr. Rina Mukherjee",
-    specialty: "Psychiatry",
-    diseases: ["Depression", "Anxiety"],
-    fee: "₹600",
-    availability: "Today • 2 slots",
-    experience: "10 yrs",
-    languages: "English, Bengali, Hindi",
-    timeSlots: [
-      { time: "11:30 AM", available: true },
-      { time: "03:00 PM", available: false },
-    ],
-  },
-  {
-    id: 5,
-    name: "Dr. Sanjay Kulkarni",
-    specialty: "Orthopedics",
-    diseases: ["Arthritis"],
-    fee: "₹550",
-    availability: "Tomorrow • 6 slots",
-    experience: "13 yrs",
-    languages: "English, Marathi, Hindi",
-    timeSlots: [
-      { time: "10:30 AM", available: true },
-      { time: "01:00 PM", available: true },
-      { time: "04:30 PM", available: false },
-    ],
-  },
-  {
-    id: 6,
-    name: "Dr. Meera Shah",
-    specialty: "Dermatology",
-    diseases: ["Skin Allergy", "Dermatitis", "Eczema"],
-    fee: "₹500",
-    availability: "Today • 4 slots",
-    experience: "8 yrs",
-    languages: "English, Gujarati, Hindi",
-    timeSlots: [
-      { time: "09:00 AM", available: true },
-      { time: "02:00 PM", available: false },
-      { time: "05:00 PM", available: true },
-    ],
-  },
-];
-
 const PatientForm = () => {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -171,30 +80,6 @@ const PatientForm = () => {
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const findSpecialtyForDisease = (disease) => {
-    if (!disease) return "General Medicine";
-    const lower = disease.toLowerCase();
-    const map = {
-      hypertension: "Cardiology",
-      "heart disease": "Cardiology",
-      diabetes: "General Medicine",
-      asthma: "General Medicine",
-      copd: "General Medicine",
-      arthritis: "Orthopedics",
-      migraine: "Neurology",
-      depression: "Psychiatry",
-      anxiety: "Psychiatry",
-      "kidney disease": "General Medicine",
-      "liver disease": "General Medicine",
-      "thyroid disorder": "General Medicine",
-      cancer: "General Medicine",
-    };
-    if (map[lower]) return map[lower];
-    if (lower.includes("skin")) return "Dermatology";
-    if (lower.includes("ear") || lower.includes("nose") || lower.includes("throat")) return "ENT";
-    return "General Medicine";
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -256,6 +141,12 @@ const PatientForm = () => {
   const handleSaveOnly = async () => {
     if (!validateStep(step)) return;
 
+    if (!user) {
+      alert("Please log in to save your information.");
+      navigate("/login");
+      return;
+    }
+
     setSaving(true);
     try {
       const token = await user.getIdToken();
@@ -294,6 +185,12 @@ const PatientForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateStep(step)) {
+      if (!user) {
+        alert("Please log in to continue.");
+        navigate("/login");
+        return;
+      }
+
       setSaving(true);
       try {
         // Get Firebase token
@@ -322,27 +219,17 @@ const PatientForm = () => {
         const data = await res.json();
         console.log("✅ Patient data saved:", data);
 
-        // Now filter doctors and navigate
-        const specialtyFocus = formData.specialty || findSpecialtyForDisease(formData.selectedDisease);
-        const matches = doctors.filter((doc) => {
-          const specialtyMatch = doc.specialty.toLowerCase() === specialtyFocus.toLowerCase();
-          const diseaseMatch = formData.selectedDisease
-            ? (doc.diseases || []).some(
-                (d) => d.toLowerCase() === formData.selectedDisease.toLowerCase()
-              )
-            : false;
-          return specialtyMatch || diseaseMatch;
-        });
-
-        const fallbackDocs = doctors.filter((doc) => doc.specialty === "General Medicine");
-        const usingFallback = matches.length === 0;
-        const doctorsToShow = usingFallback ? fallbackDocs : matches;
+        // Now filter doctors and navigate using the utility function
+        const { doctors: filteredDoctors, usedFallback, targetSpecialty } = filterDoctors(
+          formData.selectedDisease,
+          formData.specialty
+        );
 
         navigate("/available-doctors", {
           state: {
-            doctors: doctorsToShow,
-            usedFallback: usingFallback,
-            targetSpecialty: specialtyFocus,
+            doctors: filteredDoctors,
+            usedFallback: usedFallback,
+            targetSpecialty: targetSpecialty,
             selectedDisease: formData.selectedDisease || "General Consultation",
           },
         });
