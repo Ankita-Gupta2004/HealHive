@@ -15,7 +15,7 @@ import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
 import DoctorsAvailable from "./pateint form/DoctorsAvailable.jsx";
 import PatientDashboard from "./pateint form/patient dashboard/PatientDashboard.jsx";
 import ChatPage from "./chat/pages/ChatPage.jsx";
-import DoctorForm from "./Doctor-Ui/Pages/DoctorForm.jsx";
+import DoctorForm from "./Doctor-Ui/pages/DoctorForm.jsx";
 import DoctorDashboard from "./Doctor-Ui/pages/DoctorDashboard.jsx";
 import DoctorSearch from "./pateint form/DoctorSearch.jsx";
 import DoctorProfile from "./pateint form/DoctorProfile.jsx";
