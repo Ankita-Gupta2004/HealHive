@@ -12,8 +12,7 @@ import { AuthProvider } from "./Context/AuthContext";
 import ResetSuccess from "./ResetSuccess.jsx";
 import PatientForm from "./pateint form/PatientForm.jsx";
 import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
-import DoctorForm from "./Doctor-Ui/Pages/DoctorForm.jsx";
-import DoctorDashboard from "./Doctor-Ui/pages/DoctorDashboard.jsx";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
@@ -27,9 +26,6 @@ createRoot(document.getElementById("root")).render(
           <Route path="/resetsuccess" element={<ResetSuccess />} />
           <Route path="/patient-form" element={<PatientForm />} />
           <Route path="/available-doctors" element={<AvailableDoctors />} />
-          <Route path="/doc" element={<DoctorForm />} />
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-        
 
 
 
