@@ -39,9 +39,9 @@ const samplePatient = {
   selectedDisease: "",
   otherDisease: "",
   specialty: "",
-  symptoms: "",
-  allergies: "",
-  currentMedications: "",
+  symptoms: [],
+  allergies: [],
+  currentMedications: [],
   emergencyName: "",
   emergencyContact: "",
   status: "Pending",
@@ -140,9 +140,21 @@ const PatientDashboard = ({ patient = samplePatient }) => {
             selectedDisease: data.selectedDisease || "",
             otherDisease: data.otherDisease || "",
             specialty: data.specialty || "",
-            symptoms: data.symptoms || "",
-            allergies: data.allergies || "",
-            currentMedications: data.currentMedications || "",
+            symptoms: Array.isArray(data.symptoms) 
+              ? data.symptoms 
+              : (typeof data.symptoms === 'string' && data.symptoms.trim() 
+                  ? data.symptoms.split(',').map(s => s.trim()).filter(s => s) 
+                  : []),
+            allergies: Array.isArray(data.allergies) 
+              ? data.allergies 
+              : (typeof data.allergies === 'string' && data.allergies.trim() 
+                  ? data.allergies.split(',').map(s => s.trim()).filter(s => s) 
+                  : []),
+            currentMedications: Array.isArray(data.currentMedications) 
+              ? data.currentMedications 
+              : (typeof data.currentMedications === 'string' && data.currentMedications.trim() 
+                  ? data.currentMedications.split(',').map(s => s.trim()).filter(s => s) 
+                  : []),
             emergencyName: data.emergencyName || "",
             emergencyContact: data.emergencyContact || "",
             medicalDocuments: data.medicalDocuments || [],
@@ -603,7 +615,7 @@ const PatientDashboard = ({ patient = samplePatient }) => {
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">Current Medications</p>
                 <div className="space-y-2">
-                  {(data.medications || []).map((med, idx) => (
+                  {(data.currentMedications || []).map((med, idx) => (
                     <div
                       key={idx}
                       className="flex items-center gap-2 text-sm text-slate-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2"
@@ -611,7 +623,7 @@ const PatientDashboard = ({ patient = samplePatient }) => {
                       <Pill className="h-4 w-4 text-emerald-500" /> {med}
                     </div>
                   ))}
-                  {(!data.medications || data.medications.length === 0) && (
+                  {(!data.currentMedications || data.currentMedications.length === 0) && (
                     <span className="text-sm text-slate-500">No medications recorded.</span>
                   )}
                 </div>
