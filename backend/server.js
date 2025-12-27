@@ -7,6 +7,7 @@ import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
 import doctorRoutes from "./routes/Doctor.js";
 
+import paymentRoutes from "./routes/payments.js";
 
 
 dotenv.config();
@@ -53,10 +54,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 
 app.use("/api/patient", patientRoutes);
-
-
-app.use("/api/doctor", doctorRoutes);
-
+app.use("/api/payments", paymentRoutes);
 
 
 // Start server
