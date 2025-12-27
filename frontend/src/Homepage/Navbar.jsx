@@ -137,10 +137,10 @@ const Navbar = () => {
                   ) : (
                     <>
                       <Link
-                        to="/profile"
+                        to="/patient-dashboard"
                         className="block px-4 py-2 text-sm hover:bg-emerald-50"
                       >
-                        Profile
+                        My Dashboard
                       </Link>
                       <Link
                         to="/settings"

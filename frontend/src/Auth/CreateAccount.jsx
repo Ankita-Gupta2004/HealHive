@@ -62,29 +62,39 @@ export default function CreateAccount() {
       // 3️⃣ Get Firebase ID token for backend authentication
       const token = await user.getIdToken(); // Firebase ID token
 
-// ✅ Correct fetch call inside CreateAccount handleSubmit
-// Inside CreateAccount.jsx handleSubmit
-await fetch("http://localhost:5000/api/users/sync", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-  },
-  body: JSON.stringify({
-    role: role,
-    extra: { 
-      name: name // This ensures the backend gets the name even if Firebase is slow
-    },
-  }),
-});
+      // ✅ Sync user to backend using configured URL
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          role: role,
+          extra: {
+            name: name,
+          },
+        }),
+      });
 
-      // 5️⃣ Send verification email
-      await sendEmailVerification(user);
+      // 5️⃣ Send verification email with explicit Action Code Settings
+      const actionCodeSettings = {
+        url:
+          import.meta.env.VITE_EMAIL_VERIFY_CONTINUE_URL ||
+          `${window.location.origin}/login`,
+        handleCodeInApp: false,
+        ...(import.meta.env.VITE_FIREBASE_DYNAMIC_LINK_DOMAIN
+          ? { dynamicLinkDomain: import.meta.env.VITE_FIREBASE_DYNAMIC_LINK_DOMAIN }
+          : {}),
+      };
+      await sendEmailVerification(user, actionCodeSettings);
 
       // 6️⃣ Sign out until verified
       await auth.signOut();
 
-      alert("Account created! Please verify your email before logging in.");
+      alert(
+        "Account created! A verification email was sent. Please check your Inbox, Spam, and Promotions. Open the email on your device and tap Verify, then log in."
+      );
       navigate("/login");
     } catch (err) {
       console.error(err);

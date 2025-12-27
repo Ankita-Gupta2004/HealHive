@@ -1,6 +1,6 @@
 import express from "express";
 import Patient from "../models/Patient.js";
-import User from "../models/User.js"; // 👈 ADD THIS IMPORT
+import User from "../models/User.js";
 import { verifyFirebaseToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.post("/submit", verifyFirebaseToken, async (req, res) => {
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
 
-    // 2. 🔑 THE MISSING LINK: Update the User's profileCompleted status
+    // 2. Update the User's profileCompleted status
     await User.findOneAndUpdate(
       { uid }, 
       { profileCompleted: true }
@@ -28,9 +28,67 @@ router.post("/submit", verifyFirebaseToken, async (req, res) => {
       patient,
     });
   } catch (err) {
-    console.error("FULL ERROR:", err); // 👈 This prints to your VS Code / Terminal console
-    res.status(500).json({ message: err.message }); // 👈 This sends the REAL error to your browser
-}
+    console.error("FULL ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ GET patient data
+router.get("/get", verifyFirebaseToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const patient = await Patient.findOne({ uid });
+
+    if (!patient) {
+      return res.status(200).json({
+        fullName: "",
+        age: "",
+        gender: "",
+        bloodGroup: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
+        selectedDisease: "",
+        otherDisease: "",
+        specialty: "",
+        symptoms: "",
+        allergies: "",
+        currentMedications: "",
+        emergencyName: "",
+        emergencyContact: "",
+        medicalDocuments: [],
+      });
+    }
+
+    res.status(200).json(patient);
+  } catch (err) {
+    console.error("Error fetching patient data:", err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ UPDATE patient data
+router.put("/update", verifyFirebaseToken, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const patient = await Patient.findOneAndUpdate(
+      { uid },
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Patient data updated",
+      patient,
+    });
+  } catch (err) {
+    console.error("Error updating patient data:", err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 export default router;
