@@ -17,6 +17,11 @@ import PatientDashboard from "./pateint form/patient dashboard/PatientDashboard.
 import ChatPage from "./chat/pages/ChatPage.jsx";
 import DoctorForm from "./Doctor-Ui/Pages/DoctorForm.jsx";
 import DoctorDashboard from "./Doctor-Ui/pages/DoctorDashboard.jsx";
+import DoctorSearch from "./pateint form/DoctorSearch.jsx";
+import DoctorProfile from "./pateint form/DoctorProfile.jsx";
+import ConsultationPayment from "./pateint form/ConsultationPayment.jsx";
+import CallRoom from "./chat/pages/CallRoom.jsx";
+import AppointmentHistory from "./pateint form/AppointmentHistory.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -35,7 +40,11 @@ createRoot(document.getElementById("root")).render(
           <Route path="/doc" element={<DoctorForm />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
           <Route path="/chat/:consultationId" element={<ChatPage />} />
-
+          <Route path="/doctor-search" element={<DoctorSearch />} />
+          <Route path="/doctor-profile/:doctorId" element={<DoctorProfile />} />
+          <Route path="/consultation-payment/:doctorId" element={<ConsultationPayment />} />
+          <Route path="/call-room/:consultationId" element={<CallRoom />} />
+          <Route path="/appointment-history" element={<AppointmentHistory />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
