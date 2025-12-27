@@ -98,7 +98,7 @@ export default function Login() {
           navigate("/"); // or "/"
         }
       } else if (data.role === "doctor") {
-        navigate("/doctor-dashboard"); // or "/"
+        navigate("/doc"); // or "/"
       }
     } catch (err) {
       console.error(err);
