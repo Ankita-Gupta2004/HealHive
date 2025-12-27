@@ -221,6 +221,45 @@ const PatientForm = () => {
     setStep((prev) => prev - 1);
   };
 
+  // Save data without navigating
+  const handleSaveOnly = async () => {
+    if (!validateStep(step)) return;
+
+    setSaving(true);
+    try {
+      const token = await user.getIdToken();
+
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/patient/submit`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        throw new Error(
+          `Failed to save patient data: ${res.status} ${res.statusText}. ${errorBody.slice(0, 100)}`
+        );
+      }
+
+      const data = await res.json();
+      console.log("✅ Patient data saved:", data);
+      alert("✅ Your information has been saved successfully! You can view it in My Dashboard.");
+    } catch (err) {
+      console.error("❌ Error:", err);
+      alert(`Error saving patient data: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Save data and navigate to available doctors
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateStep(step)) {
@@ -782,14 +821,25 @@ const PatientForm = () => {
                   Next Step
                 </button>
               ) : (
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="ml-auto px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <CheckCircle className="h-5 w-5" />
-                  {saving ? "Saving Patient Data..." : "See Doctors if Available"}
-                </button>
+                <div className="ml-auto flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveOnly}
+                    disabled={saving}
+                    className="px-6 py-3 rounded-xl border-2 border-emerald-600 text-emerald-700 font-semibold hover:bg-emerald-50 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle className="h-5 w-5" />
+                    {saving ? "Submitting..." : "Submit"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Stethoscope className="h-5 w-5" />
+                    {saving ? "Saving..." : "See Doctors if Available"}
+                  </button>
+                </div>
               )}
             </div>
           </form>
