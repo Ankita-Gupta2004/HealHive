@@ -73,26 +73,57 @@ const DoctorForm = () => {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.fullName.trim()) newErrors.fullName = "Name is required";
-      if (!formData.age || formData.age < 25 || formData.age > 80)
-        newErrors.age = "Valid age is required (25-80)";
-      if (!formData.gender) newErrors.gender = "Gender is required";
-      if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
-        newErrors.email = "Valid email is required";
-      if (!formData.phone.match(/^\d{10}$/))
-        newErrors.phone = "Valid 10-digit phone number required";
+      if (!formData.fullName.trim()) {
+        newErrors.fullName = "Name is required";
+      } else if (formData.fullName.length < 3) {
+        newErrors.fullName = "Name must be at least 3 characters";
+      }
+
+      if (!formData.age) {
+        newErrors.age = "Age is required";
+      } else if (formData.age < 25 || formData.age > 75) {
+        newErrors.age = "Doctors must be between 25 and 75 years old";
+      }
+
+      if (!formData.gender) newErrors.gender = "Please select a gender";
+
+      if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+
+      // Stricter Phone Validation (Indian format example)
+      if (!formData.phone.match(/^[6-9]\d{9}$/)) {
+        newErrors.phone = "Enter a valid 10-digit mobile number";
+      }
     }
 
     if (currentStep === 2) {
-      if (!formData.experience.trim()) newErrors.experience = "Experience is required";
-      if (!formData.qualification.trim()) newErrors.qualification = "Qualification is required";
-      if (!formData.specialty) newErrors.specialty = "Select your specialty";
-      if (!formData.consultationFee.trim()) newErrors.consultationFee = "Consultation fee is required";
+      if (!formData.qualification.trim()) newErrors.qualification = "Qualification (e.g. MBBS) is required";
+      
+      if (!formData.experience) {
+        newErrors.experience = "Experience is required";
+      } else if (formData.experience < 0 || formData.experience > 50) {
+        newErrors.experience = "Please enter valid years of experience (0-50)";
+      }
+
+      if (!formData.specialty) newErrors.specialty = "Please select your medical specialty";
+
+      if (!formData.consultationFee) {
+        newErrors.consultationFee = "Consultation fee is required";
+      } else if (formData.consultationFee < 0) {
+        newErrors.consultationFee = "Fee cannot be negative";
+      } else if (formData.consultationFee > 10000) {
+        newErrors.consultationFee = "Fee seems too high (Max ₹10,000)";
+      }
     }
 
     if (currentStep === 3) {
-      if (formData.availableDays.length === 0) newErrors.availableDays = "Select at least one available day";
-      if (!formData.availableTimeSlots.trim()) newErrors.availableTimeSlots = "Specify available time slots";
+      if (formData.availableDays.length === 0) {
+        newErrors.availableDays = "Select at least one day you are available";
+      }
+      if (!formData.availableTimeSlots.trim()) {
+        newErrors.availableTimeSlots = "Please specify your timing (e.g., 10 AM - 2 PM)";
+      }
     }
 
     setErrors(newErrors);
@@ -103,38 +134,50 @@ const DoctorForm = () => {
   const handlePrevious = () => setStep(prev => prev -1);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if(!validateStep(step)) return;
+  e.preventDefault();
+  if (!validateStep(step)) return;
 
-    setSaving(true);
-    try {
-      localStorage.setItem("doctorFormData", JSON.stringify(formData));
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
 
-      if(user){
-        const token = await user.getIdToken();
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/doctor/submit`,{
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        if(!res.ok) throw new Error("Failed to save doctor data");
-        const data = await res.json();
-        console.log("✅ Doctor data saved:", data);
+  setSaving(true);
+
+  try {
+    const token = await user.getIdToken();
+
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/doctor/submit`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
       }
+    );
 
-      alert("Doctor registration successful!");
-      navigate("/doctor-dashboard");
-    } catch(err){
-      console.error("❌ Error:", err);
-      alert("Data saved locally! You can view it on dashboard.");
-      navigate("/doctor-dashboard");
-    } finally {
-      setSaving(false);
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.message || "Failed to submit");
     }
-  };
+
+    const data = await res.json();
+    console.log("✅ Doctor saved in DB:", data);
+
+    // ✅ SUCCESS → dashboard
+    navigate("/doctor-dashboard");
+
+  } catch (err) {
+    console.error("❌ Submit error:", err.message);
+    alert(err.message || "Failed to save data. Try again.");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-12 px-4 sm:px-6 lg:px-8">

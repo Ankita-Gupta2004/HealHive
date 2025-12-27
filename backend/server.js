@@ -5,6 +5,8 @@ import cors from "cors";
 // import admin from "firebase-admin";
 import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
+import doctorRoutes from "./routes/Doctor.js";
+
 
 
 dotenv.config();
@@ -51,6 +53,10 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 
 app.use("/api/patient", patientRoutes);
+
+
+app.use("/api/doctor", doctorRoutes);
+
 
 
 // Start server
