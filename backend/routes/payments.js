@@ -1,11 +1,11 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import verifyToken from "../middleware/verifyToken.js";
+import { verifyFirebaseToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Dummy payment initiation: returns a consultationId for chat
-router.post("/initiate", verifyToken, async (req, res) => {
+router.post("/initiate", verifyFirebaseToken, async (req, res) => {
   try {
     const { doctorId, doctorName, slotTime, fee } = req.body || {};
     if (!doctorId || !slotTime) {

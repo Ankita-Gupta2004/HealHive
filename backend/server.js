@@ -5,6 +5,8 @@ import cors from "cors";
 // import admin from "firebase-admin";
 import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
+import doctorRoutes from "./routes/Doctor.js";
+
 import paymentRoutes from "./routes/payments.js";
 
 
