@@ -12,6 +12,7 @@ import { AuthProvider } from "./Context/AuthContext";
 import ResetSuccess from "./ResetSuccess.jsx";
 import PatientForm from "./pateint form/PatientForm.jsx";
 import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
+import DoctorsAvailable from "./pateint form/DoctorsAvailable.jsx";
 import PatientDashboard from "./pateint form/patient dashboard/PatientDashboard.jsx";
 import ChatPage from "./chat/pages/ChatPage.jsx";
 import DoctorForm from "./Doctor-Ui/Pages/DoctorForm.jsx";
@@ -29,7 +30,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/resetsuccess" element={<ResetSuccess />} />
           <Route path="/patient-form" element={<PatientForm />} />
-          <Route path="/available-doctors" element={<AvailableDoctors />} />
+          <Route path="/available-doctors" element={<DoctorsAvailable />} />
           <Route path="/patient-dashboard" element={<PatientDashboard />} />
           <Route path="/doc" element={<DoctorForm />} />
           <Route path="/doctor-dashboard" element={<DoctorDashboard />} />

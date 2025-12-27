@@ -98,7 +98,11 @@ export default function Login() {
           navigate("/"); // or "/"
         }
       } else if (data.role === "doctor") {
-        navigate("/doc"); // or "/"
+        if (data.profileCompleted === false) {
+          navigate("/doc"); // Redirect to doctor registration form
+        } else {
+          navigate("/doctor-dashboard"); // Redirect to doctor dashboard if already completed
+        }
       }
     } catch (err) {
       console.error(err);

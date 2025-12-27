@@ -26,6 +26,7 @@ const doctorSchema = new mongoose.Schema(
     additionalNotes: String,
 
     verified: { type: Boolean, default: false },
+    profileCompleted: { type: Boolean, default: false }, // Track if doctor completed registration form
   },
   { timestamps: true }
 );
