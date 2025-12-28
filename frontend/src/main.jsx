@@ -11,7 +11,7 @@ import ResetPassword from "./Auth/ResetPassword.jsx";
 import { AuthProvider } from "./Context/AuthContext";
 import ResetSuccess from "./ResetSuccess.jsx";
 import PatientForm from "./pateint form/PatientForm.jsx";
-import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
+// import AvailableDoctors from "./pateint form/AvailableDoctors.jsx";
 import DoctorsAvailable from "./pateint form/DoctorsAvailable.jsx";
 import PatientDashboard from "./pateint form/patient dashboard/PatientDashboard.jsx";
 import ChatPage from "./chat/pages/ChatPage.jsx";
