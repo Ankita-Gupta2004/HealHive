@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
-import { getDoctorById } from "../utils/doctorFilterService";
+import { getDoctorById, getStableRating, getStableReviews } from "../utils/doctorFilterService";
 
 const DoctorProfile = () => {
   const { doctorId } = useParams();
@@ -80,12 +80,12 @@ const DoctorProfile = () => {
     });
   };
 
-  // Mock doctor additional details
+  // Stable doctor additional details
   const doctorDetails = {
-    rating: (Math.random() * 2 + 3.5).toFixed(1),
-    reviews: Math.floor(Math.random() * 200 + 50),
-    isOnline: Math.random() > 0.4,
-    location: ["New Delhi", "Mumbai", "Bangalore"][Math.floor(Math.random() * 3)],
+    rating: doctor.rating || getStableRating(doctor),
+    reviews: doctor.reviews || getStableReviews(doctor),
+    isOnline: typeof doctor.isOnline === "boolean" ? doctor.isOnline : Math.random() > 0.4,
+    location: doctor.location || ["New Delhi", "Mumbai", "Bangalore"][Math.floor(Math.random() * 3)],
     about: `Dr. ${doctor.name} is a highly experienced ${doctor.specialty} specialist with over ${doctor.experience || 10} years of practice. Known for compassionate care and accurate diagnosis, Dr. ${doctor.name} has helped thousands of patients achieve better health outcomes.`,
     education: ["MBBS - Delhi University", "MD - Cardiology - AIIMS Delhi"],
     achievements: [

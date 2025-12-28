@@ -193,6 +193,112 @@ export const doctors = [
       { time: "05:00 PM", available: true },
     ],
   },
+  // --- Added Cancer specialists ---
+  {
+    id: 20,
+    name: "Dr. Vikram Khanna",
+    specialty: "Cancer",
+    diseases: ["Cancer", "Lymphoma", "Leukemia"],
+    fee: "₹900",
+    availability: "Today • 3 slots",
+    experience: "14 yrs",
+    languages: "English, Hindi",
+    timeSlots: [
+      { time: "10:00 AM", available: true },
+      { time: "01:00 PM", available: true },
+      { time: "05:00 PM", available: false },
+    ],
+  },
+  {
+    id: 21,
+    name: "Dr. Shalini Bose",
+    specialty: "Cancer",
+    diseases: ["Breast Cancer", "Ovarian Cancer"],
+    fee: "₹950",
+    availability: "Tomorrow • 4 slots",
+    experience: "12 yrs",
+    languages: "English, Bengali, Hindi",
+    timeSlots: [
+      { time: "09:30 AM", available: true },
+      { time: "12:30 PM", available: true },
+      { time: "04:30 PM", available: true },
+    ],
+  },
+  {
+    id: 22,
+    name: "Dr. Raghav Iyer",
+    specialty: "Cancer",
+    diseases: ["Lung Cancer", "Prostate Cancer"],
+    fee: "₹1,000",
+    availability: "Today • 2 slots",
+    experience: "16 yrs",
+    languages: "English, Tamil, Hindi",
+    timeSlots: [
+      { time: "11:00 AM", available: true },
+      { time: "03:00 PM", available: true },
+    ],
+  },
+  {
+    id: 23,
+    name: "Dr. Naina Pathak",
+    specialty: "Cancer",
+    diseases: ["Skin Cancer", "Sarcoma"],
+    fee: "₹880",
+    availability: "Tomorrow • 3 slots",
+    experience: "10 yrs",
+    languages: "English, Hindi",
+    timeSlots: [
+      { time: "10:30 AM", available: true },
+      { time: "02:00 PM", available: true },
+      { time: "06:00 PM", available: false },
+    ],
+  },
+  // --- Added more General Medicine doctors ---
+  {
+    id: 24,
+    name: "Dr. Sneha Kulkarni",
+    specialty: "General Medicine",
+    diseases: ["Diabetes", "Hypertension", "Thyroid Disorder"],
+    fee: "₹500",
+    availability: "Today • 5 slots",
+    experience: "8 yrs",
+    languages: "English, Marathi, Hindi",
+    timeSlots: [
+      { time: "09:00 AM", available: true },
+      { time: "12:00 PM", available: true },
+      { time: "04:00 PM", available: true },
+    ],
+  },
+  {
+    id: 25,
+    name: "Dr. Arvind Sharma",
+    specialty: "General Medicine",
+    diseases: ["Asthma", "COPD", "Fever"],
+    fee: "₹450",
+    availability: "Tomorrow • 4 slots",
+    experience: "11 yrs",
+    languages: "English, Hindi",
+    timeSlots: [
+      { time: "10:00 AM", available: true },
+      { time: "01:30 PM", available: true },
+      { time: "05:30 PM", available: true },
+    ],
+  },
+  {
+    id: 26,
+    name: "Dr. Farah Khan",
+    specialty: "General Medicine",
+    diseases: ["Cold", "Flu", "Migraine"],
+    fee: "₹480",
+    availability: "Today • 3 slots",
+    experience: "9 yrs",
+    languages: "English, Urdu, Hindi",
+    timeSlots: [
+      { time: "11:00 AM", available: true },
+      { time: "02:00 PM", available: true },
+      { time: "06:00 PM", available: false },
+    ],
+  },
 ];
 
 // Map backend doctor to the shape used in UI
@@ -209,6 +315,27 @@ export const mapApiDoctor = (doc) => ({
   source: "registered",
   raw: doc,
 });
+
+// Deterministic pseudo-random helpers (stable across renders)
+const hashString = (str = "") => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
+
+export const getStableRating = (doc) => {
+  const h = hashString(String(doc.id || doc.name || "doctor"));
+  const rating = 3.8 + (h % 12) / 10; // 3.8 - 4.9
+  return rating.toFixed(1);
+};
+
+export const getStableReviews = (doc) => {
+  const h = hashString(String(doc.id || doc.name || "doctor"));
+  return 120 + (h % 280); // 120 - 399
+};
 
 // Fetch registered doctors from API
 export const fetchRegisteredDoctors = async (token) => {
@@ -253,7 +380,7 @@ export const findSpecialtyForDisease = (disease) => {
     "kidney disease": "General Medicine",
     "liver disease": "General Medicine",
     "thyroid disorder": "General Medicine",
-    cancer: "General Medicine",
+    cancer: "Cancer",
   };
 
   // Check exact match first
