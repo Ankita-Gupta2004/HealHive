@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
+import { useAuth } from "../Context/AuthContext";
 
 // ✅ Custom Input
 function Input({ type = "text", placeholder, className = "", ...props }) {
@@ -37,6 +38,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false); // ✅ NEW
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect already-authenticated users straight to home
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/");
+    }
+  }, [authLoading, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,6 +120,15 @@ export default function Login() {
       setLoading(false); // ✅ re-enable button if error
     }
   };
+
+  // Avoid showing the form while auth state is resolving
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <>

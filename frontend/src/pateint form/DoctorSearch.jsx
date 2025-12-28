@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
-import { getAllDoctors } from "../utils/doctorFilterService";
+import { getAllDoctors, fetchRegisteredDoctors } from "../utils/doctorFilterService";
 
 const DoctorSearch = () => {
   const navigate = useNavigate();
@@ -23,6 +23,8 @@ const DoctorSearch = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
   const [selectedRating, setSelectedRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [registeredDoctors, setRegisteredDoctors] = useState([]);
+
   // Require login to access doctor search
   useEffect(() => {
     if (!user) {
@@ -37,17 +39,38 @@ const DoctorSearch = () => {
     }
   }, [location.state?.searchQuery]);
 
-  const doctors = getAllDoctors();
+  // Load registered doctors
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (!user) return;
+        const token = await user.getIdToken();
+        const apiDocs = await fetchRegisteredDoctors(token);
+        setRegisteredDoctors(apiDocs);
+      } catch (err) {
+        console.error("doctor fetch error", err);
+      }
+    };
+    load();
+  }, [user]);
 
-  // Mock additional doctor data
-  const doctorsWithDetails = doctors.map((doc) => ({
-    ...doc,
-    rating: (Math.random() * 2 + 3.5).toFixed(1), // 3.5-5.5 rating
-    reviews: Math.floor(Math.random() * 200 + 50),
-    isOnline: Math.random() > 0.4,
-    nextAvailable: "Today at " + (Math.floor(Math.random() * 8) + 9) + ":00 AM",
-    location: ["New Delhi", "Mumbai", "Bangalore", "Hyderabad"][Math.floor(Math.random() * 4)],
-  }));
+  const doctors = useMemo(() => getAllDoctors(registeredDoctors), [registeredDoctors]);
+
+  // Mock additional doctor data (keep for UI richness)
+  const doctorsWithDetails = useMemo(
+    () =>
+      doctors.map((doc) => ({
+        ...doc,
+        rating: doc.rating || (Math.random() * 2 + 3.5).toFixed(1),
+        reviews: doc.reviews || Math.floor(Math.random() * 200 + 50),
+        isOnline: typeof doc.isOnline === "boolean" ? doc.isOnline : Math.random() > 0.4,
+        nextAvailable:
+          doc.nextAvailable || "Today at " + (Math.floor(Math.random() * 8) + 9) + ":00 AM",
+        location:
+          doc.location || ["New Delhi", "Mumbai", "Bangalore", "Hyderabad"][Math.floor(Math.random() * 4)],
+      })),
+    [doctors]
+  );
 
   const specialties = ["All", ...new Set(doctorsWithDetails.map((d) => d.specialty))];
 
@@ -61,9 +84,7 @@ const DoctorSearch = () => {
           disease.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-      const matchesSpecialty =
-        selectedSpecialty === "All" || doc.specialty === selectedSpecialty;
-
+      const matchesSpecialty = selectedSpecialty === "All" || doc.specialty === selectedSpecialty;
       const matchesRating = parseFloat(doc.rating) >= selectedRating;
 
       return matchesSearch && matchesSpecialty && matchesRating;

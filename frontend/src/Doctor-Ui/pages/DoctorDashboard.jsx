@@ -23,23 +23,6 @@ const statsTemplate = [
   { label: "Today's Earnings", key: "earnings", icon: IndianRupee },
 ];
 
-const appointments = [
-  {
-    id: 1,
-    patient: "Ankita Gupta",
-    time: "10:30 AM",
-    issue: "Hypertension",
-    status: "Approved",
-  },
-  {
-    id: 2,
-    patient: "Rahul Verma",
-    time: "12:00 PM",
-    issue: "Chest Pain",
-    status: "Pending",
-  },
-];
-
 const StatCard = ({ icon: Icon, label, value }) => (
   <div className="bg-white rounded-2xl p-5 shadow-sm border border-emerald-100 flex items-center gap-4">
     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center">
@@ -56,6 +39,7 @@ const DoctorDashboard = () => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [appointments, setAppointments] = useState([]);
   const [openEdit, setOpenEdit] = useState(false);
   const [editData, setEditData] = useState(null);
   const { user } = useAuth();
@@ -87,7 +71,9 @@ const DoctorDashboard = () => {
 
         const data = await res.json();
         console.log("✅ Doctor data loaded:", data);
-        setDoctor(data.doctor || data);
+        const docData = data.doctor || data;
+        setDoctor(docData);
+        setAppointments(docData.interestedPatients || []);
       } catch (err) {
         console.error("❌ Error fetching doctor data:", err);
         setError(err.message || "Failed to load doctor data");
@@ -136,9 +122,9 @@ const DoctorDashboard = () => {
 
   const statsData = {
     appointments: appointments.length,
-    patients: 124,
-    pending: appointments.filter(a => a.status === "Pending").length,
-    earnings: `₹${doctor.consultationFee * appointments.length}`,
+    patients: appointments.length,
+    pending: appointments.length, // treat all as pending until accepted workflow exists
+    earnings: `₹${(doctor.consultationFee || 0) * appointments.length}`,
   };
 
   const handleEditChange = (e) => {
@@ -196,36 +182,26 @@ const DoctorDashboard = () => {
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Calendar className="h-5 w-5 text-emerald-600" />
-            Today's Appointments
+            Patients who chose you
           </h2>
 
           <div className="space-y-3">
-            {appointments.map((a) => (
+            {appointments.length === 0 && (
+              <p className="text-slate-500">No patients yet. Once someone selects you, they will appear here.</p>
+            )}
+            {appointments.map((a, idx) => (
               <div
-                key={a.id}
+                key={idx}
                 className="flex flex-col md:flex-row md:justify-between md:items-center p-4 rounded-xl bg-emerald-50 border border-emerald-100 gap-3"
               >
                 <div>
-                  <p className="font-semibold">{a.patient}</p>
-                  <p className="text-sm text-slate-500">
-                    {a.issue} • {a.time}
-                  </p>
+                  <p className="font-semibold">{a.name || "Patient"}</p>
+                  <p className="text-sm text-slate-500">{a.email || ""}</p>
                 </div>
 
-                {a.status === "Approved" ? (
-                  <div className="flex gap-2">
-                    <button className="px-4 py-2 rounded-lg bg-emerald-600 text-white flex items-center gap-1">
-                      <Video className="h-4 w-4" /> Video
-                    </button>
-                    <button className="px-4 py-2 rounded-lg border border-emerald-600 text-emerald-700 flex items-center gap-1">
-                      <MessageSquare className="h-4 w-4" /> Chat
-                    </button>
-                  </div>
-                ) : (
-                  <span className="text-sm font-medium text-orange-600">
-                    {a.status}
-                  </span>
-                )}
+                <span className="text-sm font-medium text-orange-600">
+                  Pending
+                </span>
               </div>
             ))}
           </div>

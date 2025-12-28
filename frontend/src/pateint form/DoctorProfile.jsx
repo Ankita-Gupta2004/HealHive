@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 import {
@@ -27,6 +27,26 @@ const DoctorProfile = () => {
 
   // Get doctor from route state or fetch by ID
   const doctor = location.state?.doctor || getDoctorById(parseInt(doctorId));
+
+  useEffect(() => {
+    if (!doctor) return;
+    // If this is a registered doctor selection, record interest
+    const recordSelection = async () => {
+      try {
+        if (!user || doctor.source !== "registered") return;
+        const token = await user.getIdToken();
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/doctor/select/${doctor.id}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (err) {
+        console.error("select doctor error", err);
+      }
+    };
+    recordSelection();
+  }, [doctor, user]);
 
   if (!doctor) {
     return (

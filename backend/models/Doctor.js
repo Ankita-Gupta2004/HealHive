@@ -25,6 +25,16 @@ const doctorSchema = new mongoose.Schema(
     languages: String,
     additionalNotes: String,
 
+    // Patients who selected/consulted this doctor
+    interestedPatients: [
+      {
+        uid: String,
+        name: String,
+        email: String,
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     verified: { type: Boolean, default: false },
     profileCompleted: { type: Boolean, default: false }, // Track if doctor completed registration form
   },
