@@ -20,7 +20,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-white text-xl font-bold">
-              <HeartPulse className="text-emerald-400" />
+              <HeartPulse className="text-emerald-401" />
               HealHive
             </div>
             <p className="text-sm text-slate-400">
