@@ -13,7 +13,12 @@ import {
 } from "lucide-react";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
-import { getAllDoctors, fetchRegisteredDoctors } from "../utils/doctorFilterService";
+import {
+  getAllDoctors,
+  fetchRegisteredDoctors,
+  getStableRating,
+  getStableReviews,
+} from "../utils/doctorFilterService";
 
 const DoctorSearch = () => {
   const navigate = useNavigate();
@@ -21,7 +26,6 @@ const DoctorSearch = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
-  const [selectedRating, setSelectedRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [registeredDoctors, setRegisteredDoctors] = useState([]);
 
@@ -61,8 +65,8 @@ const DoctorSearch = () => {
     () =>
       doctors.map((doc) => ({
         ...doc,
-        rating: doc.rating || (Math.random() * 2 + 3.5).toFixed(1),
-        reviews: doc.reviews || Math.floor(Math.random() * 200 + 50),
+        rating: doc.rating || getStableRating(doc),
+        reviews: doc.reviews || getStableReviews(doc),
         isOnline: typeof doc.isOnline === "boolean" ? doc.isOnline : Math.random() > 0.4,
         nextAvailable:
           doc.nextAvailable || "Today at " + (Math.floor(Math.random() * 8) + 9) + ":00 AM",
@@ -85,11 +89,34 @@ const DoctorSearch = () => {
         );
 
       const matchesSpecialty = selectedSpecialty === "All" || doc.specialty === selectedSpecialty;
-      const matchesRating = parseFloat(doc.rating) >= selectedRating;
-
-      return matchesSearch && matchesSpecialty && matchesRating;
+      return matchesSearch && matchesSpecialty;
     });
-  }, [searchQuery, selectedSpecialty, selectedRating, doctorsWithDetails]);
+  }, [searchQuery, selectedSpecialty, doctorsWithDetails]);
+
+  // Ensure at least 4 unique doctors for the current filter without duplicates
+  const displayedDoctors = useMemo(() => {
+    const pool = selectedSpecialty === "All"
+      ? doctorsWithDetails
+      : doctorsWithDetails.filter((d) => d.specialty === selectedSpecialty);
+
+    const uniqueFiltered = [...filteredDoctors];
+    if (uniqueFiltered.length >= 4) return uniqueFiltered;
+
+    const needed = 4 - uniqueFiltered.length;
+    const extras = pool.filter(
+      (d) => !uniqueFiltered.some((u) => u.id === d.id)
+    ).slice(0, needed);
+
+    // If not enough in pool (rare), fill from all doctors without duplicates
+    let result = [...uniqueFiltered, ...extras];
+    if (result.length < 4) {
+      const globalExtras = doctorsWithDetails.filter(
+        (d) => !result.some((u) => u.id === d.id)
+      ).slice(0, 4 - result.length);
+      result = [...result, ...globalExtras];
+    }
+    return result;
+  }, [filteredDoctors, doctorsWithDetails, selectedSpecialty]);
 
   return (
     <>
@@ -159,22 +186,6 @@ const DoctorSearch = () => {
                     ))}
                   </div>
                 </div>
-
-                {/* Rating Filter */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-3">
-                    Minimum Rating: {selectedRating > 0 ? selectedRating + " ⭐" : "Any"}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="5"
-                    step="0.5"
-                    value={selectedRating}
-                    onChange={(e) => setSelectedRating(parseFloat(e.target.value))}
-                    className="w-full accent-emerald-600"
-                  />
-                </div>
               </div>
             )}
           </div>
@@ -182,14 +193,14 @@ const DoctorSearch = () => {
           {/* Results Count */}
           <div className="max-w-2xl mx-auto mb-6 text-slate-600 animate-fadeUp">
             <p className="text-sm font-semibold">
-              Found <span className="text-emerald-600">{filteredDoctors.length}</span> doctors
+              Showing <span className="text-emerald-600">{displayedDoctors.length}</span> doctors
             </p>
           </div>
 
           {/* Doctor Cards */}
           <div className="max-w-2xl mx-auto space-y-4 animate-fadeUp">
-            {filteredDoctors.length > 0 ? (
-              filteredDoctors.map((doctor) => (
+            {displayedDoctors.length > 0 ? (
+              displayedDoctors.map((doctor) => (
                 <div
                   key={doctor.id}
                   className="bg-white rounded-2xl border border-emerald-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
