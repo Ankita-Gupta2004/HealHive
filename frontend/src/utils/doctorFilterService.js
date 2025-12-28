@@ -195,6 +195,41 @@ export const doctors = [
   },
 ];
 
+// Map backend doctor to the shape used in UI
+export const mapApiDoctor = (doc) => ({
+  id: doc.id || doc._id,
+  name: doc.name || doc.fullName || "Doctor",
+  specialty: doc.specialty || "General Medicine",
+  diseases: doc.diseases || [],
+  fee: typeof doc.consultationFee === "number" ? `₹${doc.consultationFee}` : doc.fee || "₹500",
+  availability: doc.availability || doc.availableTimeSlots || "Slots",
+  experience: doc.experience ? `${doc.experience} yrs` : doc.experience || "0 yrs",
+  languages: doc.languages || "English",
+  timeSlots: doc.timeSlots || [],
+  source: "registered",
+  raw: doc,
+});
+
+// Fetch registered doctors from API
+export const fetchRegisteredDoctors = async (token) => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/doctor/public`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(`Failed to load doctors ${res.status}`);
+    const data = await res.json();
+    return (data.doctors || []).map(mapApiDoctor);
+  } catch (err) {
+    console.error("fetchRegisteredDoctors error", err);
+    return [];
+  }
+};
+
+// Return mock + optionally fetched doctors
+export const getAllDoctors = (registered = []) => {
+  return [...registered, ...doctors];
+};
+
 /**
  * Maps a disease to its recommended specialty
  * @param {string} disease - The disease name
@@ -264,14 +299,6 @@ export const filterDoctors = (selectedDisease, preferredSpecialty = null) => {
     usedFallback,
     targetSpecialty,
   };
-};
-
-/**
- * Get all available doctors
- * @returns {Array} - All doctors
- */
-export const getAllDoctors = () => {
-  return doctors;
 };
 
 /**
