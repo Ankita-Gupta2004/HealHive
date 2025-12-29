@@ -17,6 +17,8 @@ import {
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
 import { getDoctorById, getStableRating, getStableReviews } from "../utils/doctorFilterService";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const DoctorProfile = () => {
   const { doctorId } = useParams();
@@ -24,9 +26,51 @@ const DoctorProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [consultationId, setConsultationId] = useState("");
+  const [pendingConsultationId, setPendingConsultationId] = useState(""); // Store consultationId from create-intent
+  const [showPayment, setShowPayment] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+  const [stripePromise, setStripePromise] = useState(null);
 
   // Get doctor from route state or fetch by ID
   const doctor = location.state?.doctor || getDoctorById(parseInt(doctorId));
+
+  useEffect(() => {
+    const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (key && typeof key === "string" && key.trim().length > 0) {
+      setStripePromise(loadStripe(key));
+    }
+  }, []);
+
+  // Check if patient has active consultation (within 24h)
+  useEffect(() => {
+    if (!user || !doctor) return;
+    const checkStatus = async () => {
+      try {
+        // Check localStorage first
+        const stored = localStorage.getItem(`consultation_${doctor.id}_${user.uid}`);
+        if (stored) {
+          const data = JSON.parse(stored);
+          const token = await user.getIdToken();
+          const res = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/payments/status/${data.consultationId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const status = await res.json();
+          if (status.active) {
+            setHasPaid(true);
+            setConsultationId(data.consultationId);
+          } else {
+            localStorage.removeItem(`consultation_${doctor.id}_${user.uid}`);
+          }
+        }
+      } catch (e) {
+        console.warn("Status check failed", e);
+      }
+    };
+    checkStatus();
+  }, [user, doctor]);
 
   useEffect(() => {
     if (!doctor) return;
@@ -72,12 +116,85 @@ const DoctorProfile = () => {
       alert("Please select a time slot");
       return;
     }
-    navigate(`/consultation-payment/${doctor.id}`, {
-      state: {
-        doctor,
-        selectedSlot,
-      },
+    
+    console.log("🏥 Booking consultation for doctor:", {
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+      source: doctor.source,
+      slotTime: selectedSlot
     });
+    
+    // Inline payment modal (no page change)
+    setShowPayment(true);
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const feeValue = typeof doctor.fee === "number"
+          ? doctor.fee
+          : parseInt(String(doctor.fee || "").replace(/[^0-9]/g, ""), 10) || 0;
+        
+        console.log("💳 Creating payment intent...", { doctorId: doctor.id, feeValue });
+        
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payments/create-intent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            doctorId: doctor.source === "registered" ? doctor.id : doctor.id, // supports both
+            doctorName: doctor.name,
+            slotTime: selectedSlot,
+            amount: feeValue * 100, // in paise for INR
+            currency: "inr",
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.clientSecret) {
+          console.log("✅ Payment intent created:", data.consultationId);
+          setPendingConsultationId(data.consultationId); // Store for later confirmation
+          setClientSecret(data.clientSecret);
+        } else {
+          throw new Error(data.error || "Failed to init payment");
+        }
+      } catch (err) {
+        console.error("❌ create-intent error", err);
+        // Fallback to dummy flow for hackathon/dev
+        try {
+          const token = await user.getIdToken();
+          const feeValue = typeof doctor.fee === "number"
+            ? doctor.fee
+            : parseInt(String(doctor.fee || "").replace(/[^0-9]/g, ""), 10) || 0;
+          
+          console.log("⚠️ Falling back to dummy payment...");
+          const res2 = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payments/initiate`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ doctorId: doctor.id, doctorName: doctor.name, slotTime: selectedSlot, fee: feeValue }),
+          });
+          const data2 = await res2.json();
+          if (res2.ok && data2.consultationId) {
+            console.log("✅ Dummy payment success:", data2.consultationId);
+            setShowPayment(false);
+            setHasPaid(true);
+            setConsultationId(data2.consultationId);
+            localStorage.setItem(
+              `consultation_${doctor.id}_${user.uid}`,
+              JSON.stringify({ consultationId: data2.consultationId, timestamp: Date.now() })
+            );
+          } else {
+            alert("Unable to start payment. Please try again.");
+            setShowPayment(false);
+          }
+        } catch (e2) {
+          alert("Unable to start payment. Please try again.");
+          setShowPayment(false);
+        }
+      }
+    })();
   };
 
   // Stable doctor additional details
@@ -297,12 +414,46 @@ const DoctorProfile = () => {
                       : "bg-slate-200 text-slate-400 cursor-not-allowed"
                   }`}
                 >
-                  Continue to Payment
+                  {hasPaid ? "Payment Completed" : "Continue to Payment"}
                 </button>
 
-                <button className="w-full mt-3 py-3 rounded-xl font-semibold border-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition flex items-center justify-center gap-2">
-                  <MessageCircle className="h-4 w-4" /> Message Doctor
-                </button>
+                <div className="mt-3 grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => navigate(`/chat/${consultationId}`)}
+                    disabled={!hasPaid}
+                    className={`w-full py-3 rounded-xl font-semibold border-2 flex items-center justify-center gap-2 transition ${
+                      hasPaid
+                        ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        : "border-slate-200 text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <MessageCircle className="h-4 w-4" /> {hasPaid ? "Message Doctor" : "Pay to Message"}
+                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => navigate(`/call-room/${consultationId}`, { state: { doctor, slot: selectedSlot, paid: true } })}
+                      disabled={!hasPaid}
+                      className={`flex-1 py-3 rounded-xl font-semibold border-2 transition ${
+                        hasPaid
+                          ? "border-teal-200 text-teal-700 hover:bg-teal-50"
+                          : "border-slate-200 text-slate-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Voice Call
+                    </button>
+                    <button
+                      onClick={() => navigate(`/call-room/${consultationId}`, { state: { doctor, slot: selectedSlot, paid: true } })}
+                      disabled={!hasPaid}
+                      className={`flex-1 py-3 rounded-xl font-semibold border-2 transition ${
+                        hasPaid
+                          ? "border-green-200 text-green-700 hover:bg-green-50"
+                          : "border-slate-200 text-slate-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Video Call
+                    </button>
+                  </div>
+                </div>
 
                 {/* Contact Info */}
                 <div className="mt-6 pt-6 border-t border-slate-200 space-y-3">
@@ -320,8 +471,116 @@ const DoctorProfile = () => {
           </div>
         </div>
       </div>
+      {showPayment && clientSecret && stripePromise && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900">Secure Payment</h3>
+              <button onClick={() => setShowPayment(false)} className="p-2 hover:bg-slate-100 rounded-lg">✕</button>
+            </div>
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <InlinePaymentForm
+                doctor={doctor}
+                selectedSlot={selectedSlot}
+                pendingConsultationId={pendingConsultationId}
+                user={user}
+                onSuccess={async (cid) => {
+                  console.log("✅ Payment succeeded, consultationId:", cid);
+                  setShowPayment(false);
+                  setHasPaid(true);
+                  setConsultationId(cid);
+                  // Persist consultation for 24h
+                  localStorage.setItem(
+                    `consultation_${doctor.id}_${user.uid}`,
+                    JSON.stringify({ consultationId: cid, timestamp: Date.now() })
+                  );
+                  console.log("💾 Saved to localStorage:", `consultation_${doctor.id}_${user.uid}`);
+                  
+                  // Mark paid on backend (always confirm for doctors in database)
+                  try {
+                    console.log("📝 Confirming payment with backend...", { doctorId: doctor.id, consultationId: cid });
+                    const token = await user.getIdToken();
+                    const confirmRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/payments/confirm`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ doctorId: doctor.id, consultationId: cid }),
+                    });
+                    
+                    if (confirmRes.ok) {
+                      console.log("✅ Payment confirmed on backend");
+                    } else {
+                      const errorData = await confirmRes.json();
+                      console.error("❌ Payment confirmation failed:", errorData);
+                    }
+                  } catch (e) {
+                    console.error("❌ confirm payment error:", e?.message);
+                  }
+                }}
+                onCancel={() => setShowPayment(false)}
+              />
+            </Elements>
+          </div>
+        </div>
+      )}
       <Footer />
     </>
+  );
+};
+
+// Inline Stripe Payment form component
+const InlinePaymentForm = ({ doctor, selectedSlot, pendingConsultationId, user, onSuccess, onCancel }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    setErrorMsg("");
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        redirect: "if_required", // keep inline
+      });
+      if (error) {
+        setErrorMsg(error.message || "Payment failed");
+        setSubmitting(false);
+        return;
+      }
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        // Use the consultationId from create-intent response, not metadata
+        const consultationId = pendingConsultationId || paymentIntent.metadata?.consultationId || `CONS_${Date.now()}`;
+        console.log("💰 Payment succeeded! Using consultationId:", consultationId);
+        onSuccess?.(consultationId);
+      } else {
+        setErrorMsg("Payment not completed");
+      }
+    } catch (err) {
+      setErrorMsg(err?.message || "Unexpected error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      {errorMsg && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">{errorMsg}</div>
+      )}
+      <div className="flex gap-3">
+        <button type="button" onClick={onCancel} className="flex-1 py-2 rounded border border-slate-200 text-slate-700">Cancel</button>
+        <button type="submit" disabled={submitting} className="flex-1 py-2 rounded bg-emerald-600 text-white font-semibold disabled:opacity-50">
+          {submitting ? "Processing..." : `Pay ${doctor.fee}`}
+        </button>
+      </div>
+      <p className="text-xs text-slate-500">You will return here automatically after payment.</p>
+    </form>
   );
 };
 

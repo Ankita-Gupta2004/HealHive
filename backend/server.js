@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import { createServer } from "http";
+import { Server as SocketIOServer } from "socket.io";
 // import admin from "firebase-admin";
 import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
@@ -12,6 +14,13 @@ import doctorRoutes from "./routes/Doctor.js";
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 // Middleware
 app.use((req, res, next) => {
@@ -60,7 +69,41 @@ app.use("/api/doctor", doctorRoutes);
 
 
 
+// Socket.IO signaling for chat and WebRTC
+io.on("connection", (socket) => {
+  console.log("🔌 Socket connected", socket.id);
+
+  socket.on("joinRoom", (roomId) => {
+    if (!roomId) return;
+    socket.join(roomId);
+    socket.to(roomId).emit("system", { type: "join", id: socket.id });
+  });
+
+  socket.on("message", ({ roomId, message }) => {
+    if (!roomId || !message) return;
+    socket.to(roomId).emit("message", { from: socket.id, message });
+  });
+
+  // WebRTC signaling
+  socket.on("offer", ({ roomId, offer }) => {
+    if (!roomId || !offer) return;
+    socket.to(roomId).emit("offer", { from: socket.id, offer });
+  });
+  socket.on("answer", ({ roomId, answer }) => {
+    if (!roomId || !answer) return;
+    socket.to(roomId).emit("answer", { from: socket.id, answer });
+  });
+  socket.on("ice-candidate", ({ roomId, candidate }) => {
+    if (!roomId || !candidate) return;
+    socket.to(roomId).emit("ice-candidate", { from: socket.id, candidate });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔌 Socket disconnected", socket.id);
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

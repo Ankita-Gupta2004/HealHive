@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Navbar from "../../Homepage/Navbar";
 import Footer from "../../Homepage/footer";
+import { io } from "socket.io-client";
 
 const CallRoom = () => {
   const { consultationId } = useParams();
@@ -51,6 +52,11 @@ const CallRoom = () => {
   const [copied, setCopied] = useState(false);
   const messagesEndRef = useRef(null);
   const callTimerRef = useRef(null);
+  const [socket, setSocket] = useState(null);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const localVideoRef = useRef(null);
 
   // Patient info (optional)
   const mockPatient = {
@@ -73,6 +79,81 @@ const CallRoom = () => {
     return () => clearInterval(callTimerRef.current);
   }, [callStatus]);
 
+  // Socket.IO setup and WebRTC signaling handlers
+  useEffect(() => {
+    const s = io(import.meta.env.VITE_BACKEND_URL || "");
+    setSocket(s);
+    s.emit("joinRoom", consultationId);
+
+    s.on("message", ({ message }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          sender: "doctor",
+          senderName: doctorName,
+          text: message,
+          timestamp: new Date(),
+        },
+      ]);
+    });
+
+    s.on("offer", async ({ offer }) => {
+      if (!pcRef.current) await setupPeer(true);
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pcRef.current.createAnswer();
+      await pcRef.current.setLocalDescription(answer);
+      s.emit("answer", { roomId: consultationId, answer });
+    });
+    s.on("answer", async ({ answer }) => {
+      if (!pcRef.current) return;
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+    s.on("ice-candidate", async ({ candidate }) => {
+      try {
+        await pcRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn("ICE candidate error", e);
+      }
+    });
+
+    return () => {
+      s.disconnect();
+      pcRef.current?.close();
+    };
+  }, [consultationId]);
+
+  const setupPeer = async (withVideo = true) => {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }],
+    });
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket?.emit("ice-candidate", { roomId: consultationId, candidate: e.candidate });
+      }
+    };
+    pc.ontrack = (e) => {
+      const [stream] = e.streams;
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+      }
+    };
+    pcRef.current = pc;
+
+    // Get local media
+    try {
+      const constraints = withVideo ? { video: true, audio: true } : { audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      localStreamRef.current = stream;
+      if (localVideoRef.current && withVideo) {
+        localVideoRef.current.srcObject = stream;
+      }
+      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+    } catch (e) {
+      console.warn("getUserMedia error", e);
+    }
+  };
+
   // Format time
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -92,32 +173,20 @@ const CallRoom = () => {
       };
       setMessages([...messages, newMessage]);
       setMessageInput("");
-
-      // Mock doctor response
-      setTimeout(() => {
-            setMessages((prev) => [
-          ...prev,
-          {
-            id: prev.length + 1,
-            sender: "doctor",
-                senderName: doctorName,
-            text: "I understand. Let me check your symptoms more carefully.",
-            timestamp: new Date(),
-          },
-        ]);
-      }, 1500);
+      // Emit via socket for real-time chat
+      socket?.emit("message", { roomId: consultationId, message: newMessage.text });
     }
   };
 
   // Start call
-  const startCall = (type) => {
+  const startCall = async (type) => {
     setCallType(type);
     setCallStatus("calling");
-
-    // Mock: Call connects after 3 seconds
-    setTimeout(() => {
-      setCallStatus("connected");
-    }, 3000);
+    await setupPeer(type === "video");
+    const offer = await pcRef.current.createOffer();
+    await pcRef.current.setLocalDescription(offer);
+    socket?.emit("offer", { roomId: consultationId, offer });
+    setCallStatus("connected");
   };
 
   // End call
@@ -199,25 +268,11 @@ const CallRoom = () => {
                   <div className="w-full h-full flex items-center justify-center bg-slate-800">
                     {callType === "video" ? (
                       <div className="w-full h-full flex">
-                        {/* Remote Video (Mock) */}
-                        <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-600">
-                          <div className="text-center">
-                            <div className="h-24 w-24 rounded-full bg-white/20 flex items-center justify-center text-white text-5xl font-bold mx-auto mb-4">
-                              {doctorInitial}
-                            </div>
-                            <p className="text-white font-semibold">{doctorName}</p>
-                          </div>
-                        </div>
+                        {/* Remote Video */}
+                        <video ref={remoteVideoRef} autoPlay playsInline className="flex-1 bg-black" />
 
-                        {/* Local Video (Mock) */}
-                        <div className="absolute bottom-4 right-4 w-32 h-32 rounded-xl bg-gradient-to-br from-teal-600 to-green-600 flex items-center justify-center border-2 border-white shadow-lg">
-                          <div className="text-center">
-                            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-1">
-                              P
-                            </div>
-                            <p className="text-white text-xs font-semibold">You</p>
-                          </div>
-                        </div>
+                        {/* Local Video */}
+                        <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-4 right-4 w-40 h-28 rounded-xl border-2 border-white shadow-lg bg-black" />
                       </div>
                     ) : (
                       <div className="text-center text-white space-y-4">

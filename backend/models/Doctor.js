@@ -31,6 +31,11 @@ const doctorSchema = new mongoose.Schema(
         uid: String,
         name: String,
         email: String,
+        // Consultation booking details
+        slotTime: String,
+        consultationId: String,
+        paid: { type: Boolean, default: false },
+        paidAt: Date, // Timestamp when payment was confirmed
         addedAt: { type: Date, default: Date.now },
       },
     ],

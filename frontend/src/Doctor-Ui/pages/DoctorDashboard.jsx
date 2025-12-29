@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Stethoscope,
   Calendar,
@@ -43,6 +44,7 @@ const DoctorDashboard = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [editData, setEditData] = useState(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDoctorData = async () => {
@@ -73,6 +75,16 @@ const DoctorDashboard = () => {
         console.log("✅ Doctor data loaded:", data);
         const docData = data.doctor || data;
         setDoctor(docData);
+        
+        // Debug: log all interested patients
+        console.log("📋 All interested patients:", docData.interestedPatients);
+        
+        // Show paid patients, but also show unpaid with a note for debugging
+        const paidPatients = (docData.interestedPatients || []).filter(p => p.paid === true);
+        console.log("💰 Paid patients:", paidPatients);
+        console.log("⏳ Unpaid patients:", (docData.interestedPatients || []).filter(p => !p.paid));
+        
+        // Show ALL patients with payment status badges
         setAppointments(docData.interestedPatients || []);
       } catch (err) {
         console.error("❌ Error fetching doctor data:", err);
@@ -187,23 +199,59 @@ const DoctorDashboard = () => {
 
           <div className="space-y-3">
             {appointments.length === 0 && (
-              <p className="text-slate-500">No patients yet. Once someone selects you, they will appear here.</p>
+              <p className="text-slate-500">No paid consultations yet. Once someone pays, they will appear here.</p>
             )}
-            {appointments.map((a, idx) => (
-              <div
-                key={idx}
-                className="flex flex-col md:flex-row md:justify-between md:items-center p-4 rounded-xl bg-emerald-50 border border-emerald-100 gap-3"
-              >
-                <div>
-                  <p className="font-semibold">{a.name || "Patient"}</p>
-                  <p className="text-sm text-slate-500">{a.email || ""}</p>
-                </div>
+            {appointments.map((a, idx) => {
+              // Check payment status and 24h window
+              const isPaid = a.paid === true;
+              const now = new Date();
+              const paidAt = a.paidAt ? new Date(a.paidAt) : new Date(a.addedAt);
+              const hoursSince = (now - paidAt) / (1000 * 60 * 60);
+              const active = isPaid && hoursSince <= 24;
+              
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    if (active && a.consultationId) {
+                      navigate(`/chat/${a.consultationId}`);
+                    }
+                  }}
+                  className={`flex flex-col md:flex-row md:justify-between md:items-center p-4 rounded-xl border gap-3 ${
+                    active
+                      ? "bg-emerald-50 border-emerald-200 cursor-pointer hover:bg-emerald-100 transition"
+                      : isPaid
+                      ? "bg-slate-50 border-slate-200 opacity-60"
+                      : "bg-amber-50 border-amber-200"
+                  }`}
+                >
+                  <div>
+                    <p className="font-semibold">{a.name || "Patient"}</p>
+                    <p className="text-sm text-slate-500">{a.email || ""}</p>
+                    {a.slotTime && <p className="text-xs text-slate-400">Slot: {a.slotTime}</p>}
+                    {a.consultationId && <p className="text-xs text-slate-400">ID: {a.consultationId.slice(0, 8)}...</p>}
+                  </div>
 
-                <span className="text-sm font-medium text-orange-600">
-                  Pending
-                </span>
-              </div>
-            ))}
+                  <div className="flex flex-col items-end gap-1">
+                    {!isPaid ? (
+                      <span className="text-sm font-medium text-amber-600">Payment Pending</span>
+                    ) : active ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-emerald-600" />
+                          <span className="text-sm font-medium text-emerald-600">
+                            Active
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500">{(24 - hoursSince).toFixed(0)}h left</span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-medium text-slate-500">Expired</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
