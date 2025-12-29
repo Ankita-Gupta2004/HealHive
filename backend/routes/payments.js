@@ -79,7 +79,9 @@ router.post("/create-intent", verifyFirebaseToken, async (req, res) => {
     }
 
     // Amount should be in smallest currency unit
-    const intAmount = Math.max(1, parseInt(amount, 10));
+
+
+    const intAmount = Math.max(1, parseInt(amount, 10) * 100);
 
     const consultationId = uuidv4();
     const paymentIntent = await stripe.paymentIntents.create({
