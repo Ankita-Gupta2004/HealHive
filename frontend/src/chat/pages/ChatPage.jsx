@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../Context/AuthContext';
 import ChatHeader from '../components/ChatHeader';
 import ChatMessages from '../components/ChatMessages';
 import ChatInput from '../components/ChatInput';
 import { dummyMessages } from '../data/dummyMessages';
+import { io } from 'socket.io-client';
 
 // Doctor data - can be extended with more doctors
 const doctorData = {
@@ -56,46 +58,113 @@ const generateDoctorResponse = (patientMessage) => {
 const ChatPage = () => {
   const { consultationId } = useParams();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState(dummyMessages);
+  const { user } = useAuth();
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [userRole, setUserRole] = useState(null); // 'doctor' or 'patient'
+  const [otherParty, setOtherParty] = useState({ name: 'User', avatar: '👤' });
 
-  // Get doctor data based on consultationId or use default
-  const doctor = doctorData.doc1; // Can be extended to fetch from consultationId
+  // Detect role and fetch consultation details
+  useEffect(() => {
+    const detectRole = async () => {
+      try {
+        if (!user) return;
+        const token = await user.getIdToken();
+        // Check if user is doctor
+        const docRes = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/doctor/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (docRes.ok) {
+          setUserRole('doctor');
+          // Fetch patient details from consultation
+          const statusRes = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/payments/status/${consultationId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (statusRes.ok) {
+            const status = await statusRes.json();
+            // For doctor, other party is patient - we'll get from socket messages or use placeholder
+            setOtherParty({ name: 'Patient', avatar: '👤' });
+          }
+        } else {
+          setUserRole('patient');
+          // Fetch consultation status for doctor info
+          const statusRes = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/payments/status/${consultationId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (statusRes.ok) {
+            const status = await statusRes.json();
+            if (status.doctor) {
+              setOtherParty({
+                name: status.doctor.name || 'Doctor',
+                specialty: status.doctor.specialty,
+                avatar: '👨‍⚕️',
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Role detection failed', e);
+        setUserRole('patient'); // default
+      }
+    };
+    detectRole();
+  }, [user, consultationId]);
+
+  useEffect(() => {
+    if (!userRole) return;
+    const s = io(import.meta.env.VITE_BACKEND_URL || '');
+    setSocket(s);
+    s.emit('joinRoom', consultationId);
+    s.on('message', ({ from, message, senderName, senderRole: msgRole }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          sender: msgRole || 'other',
+          senderName: senderName || otherParty.name,
+          senderRole: otherParty.specialty || '',
+          avatar: otherParty.avatar,
+          message,
+          timestamp: generateTimestamp(),
+          read: false,
+        },
+      ]);
+    });
+    return () => {
+      s.disconnect();
+    };
+  }, [consultationId, userRole, otherParty]);
 
   const handleSendMessage = useCallback(
     (messageText) => {
-      // Add patient message
-      const patientMessage = {
+      // Add own message
+      const ownMessage = {
         id: messages.length + 1,
-        sender: 'patient',
+        sender: userRole === 'doctor' ? 'doctor' : 'patient',
         senderName: 'You',
-        avatar: '👤',
+        avatar: userRole === 'doctor' ? '👨‍⚕️' : '👤',
         message: messageText,
         timestamp: generateTimestamp(),
         read: true,
       };
 
-      setMessages((prev) => [...prev, patientMessage]);
+      setMessages((prev) => [...prev, ownMessage]);
       setIsLoading(true);
-
-      // Simulate doctor response after delay
-      setTimeout(() => {
-        const doctorMessage = {
-          id: messages.length + 2,
-          sender: 'doctor',
-          senderName: doctor.name,
-          senderRole: doctor.speciality,
-          avatar: doctor.avatar,
-          message: generateDoctorResponse(messageText),
-          timestamp: generateTimestamp(),
-          read: false,
-        };
-
-        setMessages((prev) => [...prev, doctorMessage]);
-        setIsLoading(false);
-      }, 1000 + Math.random() * 1500); // Random delay between 1-2.5 seconds
+      // Emit via socket with role identification
+      if (socket) {
+        socket.emit('message', {
+          roomId: consultationId,
+          message: messageText,
+          senderName: user?.displayName || user?.email || 'User',
+          senderRole: userRole,
+        });
+      }
+      setTimeout(() => setIsLoading(false), 300);
     },
-    [messages, doctor]
+    [messages, socket, consultationId, userRole, user]
   );
 
   const handleBack = () => {
@@ -105,7 +174,7 @@ const ChatPage = () => {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-emerald-50 via-white to-teal-50">
       {/* Header */}
-      <ChatHeader doctor={doctor} onBack={handleBack} />
+      <ChatHeader doctor={otherParty} onBack={handleBack} />
 
       {/* Messages */}
       <ChatMessages messages={messages} />

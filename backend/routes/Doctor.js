@@ -100,14 +100,19 @@ router.post("/select/:doctorId", verifyToken, async (req, res) => {
 router.get("/profile", verifyToken, async (req, res) => {
   try {
     const uid = req.firebaseUser.uid;
+    console.log("🔍 /api/doctor/profile called for uid:", uid);
 
     const doctor = await Doctor.findOne({ uid });
 
     if (!doctor) {
+      console.log("❌ Doctor profile not found for uid:", uid);
       return res.status(404).json({
         message: "Doctor profile not found",
       });
     }
+
+    console.log("✅ Doctor profile found:", doctor.fullName, "interestedPatients count:", doctor.interestedPatients?.length);
+    console.log("📋 interestedPatients:", JSON.stringify(doctor.interestedPatients, null, 2));
 
     res.json({
       message: "Doctor profile retrieved successfully",
