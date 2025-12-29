@@ -27,6 +27,9 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_PASSWORD_RESET_URL: ${{ secrets.VITE_PASSWORD_RESET_URL }}
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+
+
 
       # 2. Deploy to Firebase Production
       - uses: FirebaseExtended/action-hosting-deploy@v0
