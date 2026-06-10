@@ -31,7 +31,7 @@ export default function CTASection() {
             style={{ animationDelay: "240ms" }}
           >
             <Link
-              to="/book"
+              to="/doctor-search"
               className="inline-flex items-center justify-center gap-3 bg-white text-emerald-700 font-semibold px-7 py-4 rounded-full shadow-lg"
             >
               Consult Now
@@ -39,7 +39,7 @@ export default function CTASection() {
             </Link>
 
             <Link
-              to="/register"
+              to="/create-account"
               className="inline-flex items-center justify-center border border-white text-white font-semibold px-7 py-4 rounded-full"
             >
               Get Started
