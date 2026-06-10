@@ -43,7 +43,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section
+    <section 
       id="how-it-works"
       className="relative bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-24 overflow-hidden"
     >

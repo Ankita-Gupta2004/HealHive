@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 
 const navLinks = [
   { name: "Home", to: "/" },
-  { name: "How It Works", to: "/how-it-works" },
-  { name: "Specialties", to: "/specialties" },
+  { name: "How It Works", to: "/#how-it-works" },
+  { name: "Specialties", to: "/#specialties" },
 ];
 
 const Navbar = () => {
@@ -18,6 +18,14 @@ const Navbar = () => {
 
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location]);
 
   // Handle search button click
   const handleSearchDoctors = () => {
@@ -33,7 +41,7 @@ const Navbar = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken();
@@ -233,10 +241,10 @@ const Navbar = () => {
                         </>
                       )}
                       <Link
-                        to="/settings"
+                        to={userRole === "doctor" ? "/doctor-dashboard" : "/patient-dashboard"}
                         className="block px-4 py-2 text-sm hover:bg-emerald-50"
                       >
-                        Settings
+                        My Profile
                       </Link>
                       <button
                         onClick={handleLogout}

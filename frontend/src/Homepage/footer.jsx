@@ -39,9 +39,9 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-3 text-sm">
               <li><Link to="/" className="hover:text-emerald-400">Home</Link></li>
-              <li><Link to="/how-it-works" className="hover:text-emerald-400">How It Works</Link></li>
-              <li><Link to="/specialties" className="hover:text-emerald-400">Specialties</Link></li>
-              <li><Link to="/book" className="hover:text-emerald-400">Consult Now</Link></li>
+              <li><Link to="/#how-it-works">How It Works</Link></li>
+              <li><Link to="/#specialties">Specialties</Link></li>
+              <li><Link to="/doctor-search">Consult Now</Link></li>
             </ul>
           </div>
 
@@ -79,7 +79,7 @@ export default function Footer() {
 
         {/* Divider */}
         <div className="border-t border-slate-700 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          
+
           <p className="text-sm text-slate-400">
             © {new Date().getFullYear()} HealHive. All rights reserved.
           </p>

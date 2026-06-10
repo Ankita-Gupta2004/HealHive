@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
 import { useAuth } from "../Context/AuthContext";
+import { Link } from "react-router-dom";
 
 // ✅ Custom Input
 function Input({ type = "text", placeholder, className = "", ...props }) {
@@ -170,12 +171,11 @@ export default function Login() {
             </div>
 
             <div className="text-right mt-2">
-              <a
-                href="/forgot-password"
+              <Link to="/forgot-password"
                 className="text-sm text-emerald-600 hover:underline"
               >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             <Button type="submit" disabled={loading} className="w-full mt-2">
@@ -185,12 +185,11 @@ export default function Login() {
 
           <p className="text-sm text-gray-600 mt-6 text-center">
             Don't have an account?{" "}
-            <a
-              href="/create-account"
+            <Link to="/create-account"
               className="text-emerald-600 hover:underline"
             >
               Sign Up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
