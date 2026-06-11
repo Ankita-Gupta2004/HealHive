@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { auth } from "../firebase";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-  sendEmailVerification,
-} from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
+import { 
+  createUserWithEmailAndPassword, 
+  updateProfile, sendEmailVerification, 
+  signInWithPopup } from "firebase/auth";
+import { googleProvider } from "../firebase";
 
 // ✅ Custom Input
 function Input({ type = "text", placeholder, className = "", ...props }) {
@@ -104,6 +104,31 @@ export default function CreateAccount() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/sync`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          role: role, // uses the existing role slider (patient/doctor)
+          extra: { name: user.displayName },
+        }),
+      });
+
+      navigate(role === "doctor" ? "/doc" : "/patient-form");
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -134,9 +159,8 @@ export default function CreateAccount() {
               <div className="relative w-64 h-10 bg-gray-200 rounded-full flex items-center cursor-pointer select-none">
                 {/* Sliding indicator */}
                 <div
-                  className={`absolute top-1 left-1 w-1/2 h-8 bg-emerald-50 border border-emerald-700 rounded-full shadow-md transition-transform duration-300 ${
-                    role === "doctor" ? "translate-x-full" : "translate-x-0"
-                  }`}
+                  className={`absolute top-1 left-1 w-1/2 h-8 bg-emerald-50 border border-emerald-700 rounded-full shadow-md transition-transform duration-300 ${role === "doctor" ? "translate-x-full" : "translate-x-0"
+                    }`}
                 ></div>
 
                 {/* Labels */}
@@ -164,6 +188,21 @@ export default function CreateAccount() {
             <Button type="submit" disabled={loading} className="w-full mt-2">
               {loading ? "Creating Account..." : "Sign Up"}
             </Button>
+
+            <div className="relative flex items-center my-2">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="mx-3 text-sm text-gray-400">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignUp}
+              className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              Continue with Google
+            </button>
           </form>
 
           <p className="text-sm text-gray-600 mt-6 text-center">
