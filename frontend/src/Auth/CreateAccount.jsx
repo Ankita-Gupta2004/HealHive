@@ -8,6 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
+import { Link } from "react-router-dom";
 
 // ✅ Custom Input
 function Input({ type = "text", placeholder, className = "", ...props }) {
@@ -168,9 +169,9 @@ export default function CreateAccount() {
 
           <p className="text-sm text-gray-600 mt-6 text-center">
             Already have an account?{" "}
-            <a href="/login" className="text-emerald-600 hover:underline">
+            <Link to="/login" className="text-emerald-600 hover:underline">
               Log in
-            </a>
+            </Link>
           </p>
         </div>
       </div>
