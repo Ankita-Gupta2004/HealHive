@@ -359,6 +359,9 @@ const PatientForm = () => {
                       name="age"
                       value={formData.age}
                       onChange={handleChange}
+                      onInput={(e) => {
+                        if (e.target.value.length > 3) e.target.value = e.target.value.slice(0, 3);
+                      }}
                       className={`w-full px-4 py-3 rounded-xl border ${
                         errors.age
                           ? "border-red-300 focus:ring-red-200"
