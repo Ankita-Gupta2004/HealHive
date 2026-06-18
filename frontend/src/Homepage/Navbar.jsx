@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { doctors } from "../utils/doctorFilterService";
 
 const navLinks = [
   { name: "Home", to: "/" },
-  { name: "How It Works", to: "/how-it-works" },
+  { name: "How It Works", to: "/#how-it-works" },
   { name: "Specialties", to: "/specialties" },
 ];
 
@@ -21,6 +21,25 @@ const Navbar = () => {
 
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavClick = (e, to) => {
+    if (to.startsWith("/#")) {
+      e.preventDefault();
+      const id = to.substring(2);
+      if (location.pathname !== "/") {
+        navigate("/");
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      } else {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }
+      setOpen(false);
+    } else {
+      setOpen(false);
+    }
+  };
 
   const searchSuggestions = useMemo(() => {
     const query = searchInput.trim().toLowerCase();
@@ -158,6 +177,7 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
+                  onClick={(e) => handleNavClick(e, link.to)}
                   className="px-4 py-2 rounded-lg text-md font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 transition"
                 >
                   {link.name}
@@ -389,7 +409,7 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                onClick={() => setOpen(false)}
+                onClick={(e) => handleNavClick(e, link.to)}
                 className="block px-4 py-3 rounded-lg hover:bg-emerald-50"
               >
                 {link.name}
