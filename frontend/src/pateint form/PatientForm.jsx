@@ -81,14 +81,25 @@ const PatientForm = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // Auto-fill email for logged-in user
   useEffect(() => {
     if (user?.email) {
       setFormData((prev) => ({ ...prev, email: user.email }));
     }
   }, [user]);
 
+  // Auto-scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    
+    if (name === "age" && value?.toString().length > 3) {
+      value = value.toString().slice(0, 3);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
