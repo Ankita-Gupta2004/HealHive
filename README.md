@@ -65,7 +65,7 @@ HealHive provides an end-to-end telehealth experience for patients and doctors. 
 - `backend/`
   - `server.js` - Express server setup, MongoDB connection, Socket.IO configuration
   - `routes/` - API routes for users, doctors, patients, and payments
-  - `models/` - Mongoose models forDoctor, Patient, and User
+ - `models/` - Mongoose models for Doctor, Patient, and User
   - `middleware/` - Firebase token verification middleware
   - `firebaseAdmin.js` - Firebase Admin initialization from env or local service account
 
