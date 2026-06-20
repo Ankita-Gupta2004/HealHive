@@ -24,6 +24,7 @@ const Navbar = () => {
   const location = useLocation();
 
   const handleNavClick = (e, to) => {
+    // If link is an in-page anchor (/#id), navigate to home then scroll
     if (to.startsWith("/#")) {
       e.preventDefault();
       const id = to.substring(2);
@@ -36,6 +37,16 @@ const Navbar = () => {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
       }
       setOpen(false);
+      // If link is Home and we're already on Home, just scroll to top
+    } else if (to === "/") {
+      if (location.pathname === "/") {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setOpen(false);
+      } else {
+        // allow Link to navigate to "/"
+        setOpen(false);
+      }
     } else {
       setOpen(false);
     }
@@ -112,7 +123,7 @@ const Navbar = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken();
@@ -124,7 +135,7 @@ const Navbar = () => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-            }
+            },
           );
           const data = await res.json();
           setUserRole(data.role); // Set 'patient' or 'doctor'
@@ -219,15 +230,22 @@ const Navbar = () => {
                       e.preventDefault();
                       setShowSuggestions(true);
                       setActiveSuggestion((current) =>
-                        Math.min(current + 1, searchSuggestions.length - 1)
+                        Math.min(current + 1, searchSuggestions.length - 1),
                       );
                     } else if (e.key === "ArrowUp") {
                       e.preventDefault();
-                      setActiveSuggestion((current) => Math.max(current - 1, 0));
+                      setActiveSuggestion((current) =>
+                        Math.max(current - 1, 0),
+                      );
                     } else if (e.key === "Enter") {
                       e.preventDefault();
-                      if (activeSuggestion >= 0 && searchSuggestions[activeSuggestion]) {
-                        handleSuggestionSelect(searchSuggestions[activeSuggestion]);
+                      if (
+                        activeSuggestion >= 0 &&
+                        searchSuggestions[activeSuggestion]
+                      ) {
+                        handleSuggestionSelect(
+                          searchSuggestions[activeSuggestion],
+                        );
                       } else {
                         handleSearchDoctors();
                       }
@@ -260,45 +278,50 @@ const Navbar = () => {
                 )}
               </div>
 
-              {showSuggestions && searchInput.trim() && searchSuggestions.length > 0 && (
-                <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-xl">
-                  {searchSuggestions.map((suggestion, index) => (
-                    <button
-                      key={`${suggestion.type}-${suggestion.value}`}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSuggestionSelect(suggestion);
-                      }}
-                      onMouseEnter={() => setActiveSuggestion(index)}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
-                        activeSuggestion === index
-                          ? "bg-emerald-50"
-                          : "hover:bg-emerald-50"
-                      }`}
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-slate-800">
-                          {suggestion.label}
+              {showSuggestions &&
+                searchInput.trim() &&
+                searchSuggestions.length > 0 && (
+                  <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-xl border border-emerald-100 bg-white shadow-xl">
+                    {searchSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.type}-${suggestion.value}`}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSuggestionSelect(suggestion);
+                        }}
+                        onMouseEnter={() => setActiveSuggestion(index)}
+                        className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
+                          activeSuggestion === index
+                            ? "bg-emerald-50"
+                            : "hover:bg-emerald-50"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-slate-800">
+                            {suggestion.label}
+                          </span>
+                          <span className="block truncate text-xs text-slate-500">
+                            {suggestion.meta}
+                          </span>
                         </span>
-                        <span className="block truncate text-xs text-slate-500">
-                          {suggestion.meta}
+                        <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                          {suggestion.type}
                         </span>
-                      </span>
-                      <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold text-emerald-700">
-                        {suggestion.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
 
             {/* CTA - My Dashboard */}
             {user ? (
               <button
                 onClick={() => {
-                  const dashboardUrl = userRole === "doctor" ? "/doctor-dashboard" : "/patient-dashboard";
+                  const dashboardUrl =
+                    userRole === "doctor"
+                      ? "/doctor-dashboard"
+                      : "/patient-dashboard";
                   navigate(dashboardUrl);
                   setShowAccount(false);
                 }}
@@ -351,7 +374,11 @@ const Navbar = () => {
                   ) : (
                     <>
                       <Link
-                        to={userRole === "doctor" ? "/doctor-dashboard" : "/patient-dashboard"}
+                        to={
+                          userRole === "doctor"
+                            ? "/doctor-dashboard"
+                            : "/patient-dashboard"
+                        }
                         className="block px-4 py-2 text-sm hover:bg-emerald-50"
                       >
                         My Dashboard
