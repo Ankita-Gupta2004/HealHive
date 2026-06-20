@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
 import { useAuth } from "../Context/AuthContext";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { googleProvider } from "../firebase";
 
 // ✅ Custom Input
 function Input({ type = "text", placeholder, className = "", ...props }) {
@@ -59,7 +60,7 @@ export default function Login() {
         email,
         password
       );
-      
+
       const user = userCredential.user;
 
       // ✅ Check email verification
@@ -130,6 +131,36 @@ export default function Login() {
     );
   }
 
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.role === "patient") {
+        navigate(data.profileCompleted === false ? "/patient-form" : "/");
+      } else if (data.role === "doctor") {
+        navigate(data.profileCompleted === false ? "/doc" : "/");
+      } else {
+        // New Google user — no role yet, send to create account to pick role
+        navigate("/create-account");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -177,6 +208,21 @@ export default function Login() {
                 Forgot Password?
               </a>
             </div>
+
+            <div className="relative flex items-center my-2">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="mx-3 text-sm text-gray-400">or</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
+              Continue with Google
+            </button>
 
             <Button type="submit" disabled={loading} className="w-full mt-2">
               {loading ? "Logging in..." : "Log In"}
