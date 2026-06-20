@@ -102,16 +102,19 @@ npm install
 
 ## Environment Variables
 
+The project uses environment variables for configuration. You can set them up by copying the provided `.env.example` files to `.env` in their respective directories:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+> [!WARNING]
+> Real credentials and secret keys must **never** be committed to the repository. Ensure `.env` files are kept local and ignored by Git.
+
 ### Backend
 
-Create a `.env` file inside `backend/` with the following variables:
-
-```env
-MONGO_URI=your_mongodb_connection_string
-STRIPE_SECRET_KEY=your_stripe_secret_key
-PORT=5000
-FIREBASE_SERVICE_ACCOUNT_JSON={...}
-```
+Configure the variables in `backend/.env` (refer to [backend/.env.example](./backend/.env.example) for placeholders):
 
 - `MONGO_URI` - MongoDB connection URL
 - `STRIPE_SECRET_KEY` - Stripe secret key for payment intent generation
@@ -122,17 +125,8 @@ If you do not provide `FIREBASE_SERVICE_ACCOUNT_JSON`, place `serviceAccountKey.
 
 ### Frontend
 
-Create a `.env` file inside `frontend/` with your Firebase config values:
+Configure the Firebase credentials in `frontend/.env` (refer to [frontend/.env.example](./frontend/.env.example) for placeholders).
 
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
-```
 
 ## Running the App
 
