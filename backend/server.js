@@ -40,9 +40,6 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-
-app.use(express.json()); // parse JSON body
-
 // Initialize Firebase Admin
 // admin.initializeApp({
 //   credential: admin.credential.cert(
