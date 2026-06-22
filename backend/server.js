@@ -8,8 +8,8 @@ import { Server as SocketIOServer } from "socket.io";
 import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
 import doctorRoutes from "./routes/Doctor.js";
- import paymentRoutes from "./routes/payments.js";
-
+import paymentRoutes from "./routes/payments.js";
+import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
 
@@ -40,9 +40,6 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-
-app.use(express.json()); // parse JSON body
-
 // Initialize Firebase Admin
 // admin.initializeApp({
 //   credential: admin.credential.cert(
@@ -72,6 +69,9 @@ app.use("/api/payments", paymentRoutes);
 
 
 app.use("/api/doctor", doctorRoutes);
+
+// Global Error Handler
+app.use(errorHandler);
 
 
 
