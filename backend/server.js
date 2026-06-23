@@ -9,6 +9,7 @@ import userRoutes from "./routes/users.js";
 import patientRoutes from "./routes/Patient.js";
 import doctorRoutes from "./routes/Doctor.js";
 import paymentRoutes from "./routes/payments.js";
+import consultationRoutes from './routes/consultationRoutes.js';
 import errorHandler from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -48,7 +49,6 @@ const io = new SocketIOServer(httpServer, {
 // });
 
 // Connect to MongoDB
-// Remove the options object entirely
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected to HealHive database");
@@ -63,17 +63,13 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
-
 app.use("/api/patient", patientRoutes);
 app.use("/api/payments", paymentRoutes);
-
-
 app.use("/api/doctor", doctorRoutes);
+app.use("/api/consultations", consultationRoutes);
 
-// Global Error Handler
+// Global Error Handler (should be after all routes)
 app.use(errorHandler);
-
-
 
 // Socket.IO signaling for chat and WebRTC
 io.on("connection", (socket) => {
@@ -111,5 +107,4 @@ io.on("connection", (socket) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+httpServer.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
