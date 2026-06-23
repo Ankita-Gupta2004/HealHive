@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Navbar from "../Homepage/Navbar";
 import Footer from "../Homepage/footer";
+import LoadingButton from '../components/LoadingButton';
 import {
   getAllDoctors,
   fetchRegisteredDoctors,
@@ -28,6 +29,7 @@ const DoctorSearch = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [registeredDoctors, setRegisteredDoctors] = useState([]);
+  const [isConsulting, setIsConsulting] = useState(false);
 
   // Require login to access doctor search
   useEffect(() => {
@@ -117,6 +119,31 @@ const DoctorSearch = () => {
     }
     return result;
   }, [filteredDoctors, doctorsWithDetails, selectedSpecialty]);
+
+  // Handle Consult Now button click - prevents duplicate submissions
+  const handleConsultNow = async (doctorId) => {
+    // Prevent multiple clicks while already processing
+    if (isConsulting) {
+      console.log('Consultation already in progress...');
+      return;
+    }
+
+    setIsConsulting(true);
+
+    try {
+      // Navigate to doctor profile with the doctor data
+      // The actual consultation logic will be handled on the profile page
+      navigate(`/doctor-profile/${doctorId}`, {
+        state: { doctor: doctorsWithDetails.find(d => d.id === doctorId) },
+      });
+    } catch (error) {
+      console.error('Error navigating to consultation:', error);
+      alert('Failed to start consultation. Please try again.');
+    } finally {
+      // Reset loading state after navigation or error
+      setIsConsulting(false);
+    }
+  };
 
   return (
     <>
@@ -267,17 +294,17 @@ const DoctorSearch = () => {
                         <p className="text-2xl font-bold text-emerald-600">{doctor.fee}</p>
                       </div>
 
-                      <button
-                        onClick={() =>
-                          navigate(`/doctor-profile/${doctor.id}`, {
-                            state: { doctor },
-                          })
-                        }
-                        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 text-white font-semibold shadow-md hover:shadow-lg group-hover:scale-[1.02] transition-all"
+                      <LoadingButton
+                        onClick={() => handleConsultNow(doctor.id)}
+                        isLoading={isConsulting}
+                        loadingText="Starting Consultation..."
+                        className="px-4 py-3 min-w-[140px]"
                       >
-                        View Profile
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
+                        <span className="flex items-center gap-2">
+                          Consult Now
+                          <ChevronRight className="h-4 w-4" />
+                        </span>
+                      </LoadingButton>
                     </div>
                   </div>
                 </div>
