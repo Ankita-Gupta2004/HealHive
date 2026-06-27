@@ -6,7 +6,7 @@ import KeyFeatures from './Homepage/KeyFeatures';
 import Navbar from './Homepage/Navbar';
 import Specialties from './Homepage/Specialties';
 import BackToTop from './Homepage/BackToTop';
-
+import ConsultationHistory from './pages/ConsultationHistory';
 function App() {
   return (
     <>
@@ -18,6 +18,7 @@ function App() {
       <CTA />
       <Footer />
       <BackToTop />
+      <Route path="/consultations" element={<ConsultationHistory />} />
     </>
   );
 }
