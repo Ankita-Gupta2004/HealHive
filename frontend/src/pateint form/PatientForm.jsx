@@ -50,6 +50,21 @@ const specialties = [
 
 const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
+const allergyOptions = [
+  "Peanuts",
+  "Milk",
+  "Eggs",
+  "Soy",
+  "Fish",
+  "Shellfish",
+  "Wheat",
+  "Tree Nuts",
+  "Latex",
+  "Penicillin",
+  "Dust",
+  "Pollen",
+];
+
 const PatientForm = () => {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -66,7 +81,7 @@ const PatientForm = () => {
     emergencyName: "",
     selectedDisease: "",
     otherDisease: "",
-    allergies: "",
+    allergies: [],
     currentMedications: "",
     symptoms: "",
     specialty: "",
@@ -78,8 +93,16 @@ const PatientForm = () => {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [allergySearch, setAllergySearch] = useState("");
+  const [customAllergy, setCustomAllergy] = useState("");
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const filteredAllergies = allergyOptions.filter(
+  (allergy) =>
+    allergy.toLowerCase().includes(allergySearch.toLowerCase()) &&
+    !formData.allergies.includes(allergy)
+);
 
   // Auto-fill email for logged-in user
   useEffect(() => {
@@ -109,6 +132,33 @@ const PatientForm = () => {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
+
+  const toggleAllergy = (allergy) => {
+  setFormData((prev) => ({
+    ...prev,
+    allergies: prev.allergies.includes(allergy)
+      ? prev.allergies.filter((a) => a !== allergy)
+      : [...prev.allergies, allergy],
+  }));
+};
+
+  const addCustomAllergy = () => {
+  const allergy = customAllergy.trim();
+
+  if (
+    allergy &&
+    !formData.allergies.some(
+      (a) => a.toLowerCase() === allergy.toLowerCase()
+    )
+  ) {
+    setFormData((prev) => ({
+      ...prev,
+      allergies: [...prev.allergies, allergy],
+    }));
+  }
+
+  setCustomAllergy("");
+};
 
   const validateStep = (currentStep) => {
     const newErrors = {};
@@ -671,20 +721,75 @@ const PatientForm = () => {
                   )}
                 </div>
 
+                
                 {/* Allergies */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-3">
                     Known Allergies
                   </label>
+                  {/* Search Box */}
                   <input
-                    type="text"
-                    name="allergies"
-                    value={formData.allergies}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-emerald-200 focus:ring-2 focus:ring-emerald-200 outline-none transition"
-                    placeholder="e.g., Penicillin, Peanuts, Latex (or 'None')"
+                  type="text"
+                  value={allergySearch}
+                  onChange={(e) => setAllergySearch(e.target.value)}
+                  placeholder="Search allergies..."
+                  className="w-full px-4 py-3 rounded-xl border border-emerald-200 focus:ring-2 focus:ring-emerald-200 outline-none transition"
                   />
-                </div>
+
+                  {/* Search Results */}
+                  {allergySearch && filteredAllergies.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {filteredAllergies.map((allergy) => (
+                        <button
+                          key={allergy}
+                          type="button"
+                          onClick={() => {
+                            toggleAllergy(allergy);
+                            setAllergySearch("");
+                          }}
+                          className="px-3 py-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-sm"
+                        >
+                          {allergy}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Custom Allergy */}
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      type="text"
+                      value={customAllergy}
+                      onChange={(e) => setCustomAllergy(e.target.value)}
+                      placeholder="Add custom allergy"
+                      className="flex-1 px-4 py-3 rounded-xl border border-emerald-200 focus:ring-2 focus:ring-emerald-200 outline-none transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomAllergy}
+                      className="px-4 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+  {/* Selected Allergies */}
+  {formData.allergies.length > 0 && (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {formData.allergies.map((allergy) => (
+        <button
+          key={allergy}
+          type="button"
+          onClick={() => toggleAllergy(allergy)}
+          className="px-3 py-2 rounded-full bg-emerald-600 text-white text-sm"
+          title="Click to remove"
+        >
+          {allergy} ✕
+        </button>
+      ))}
+    </div>
+  )}
+</div>
 
                 {/* Current Medications */}
                 <div>
